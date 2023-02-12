@@ -3,13 +3,20 @@ name = "vocolo"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+actix-web = "4.3.0"
+actix-rt = "2.8.0"
 
-tokio = "1.12"
+tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
+async-trait = "0.1.64"
 
 mongodb = "2.0"
 
 uuid = { version = "1.3.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
 serde = { version = "1.0.152", features = ["derive"] }
+strum = { version = "0.24", features = ["derive"] }
+strum_macros = "0.24"
+
+serenity = "0.11"
+rosu-v2 = "0.7.0"
+

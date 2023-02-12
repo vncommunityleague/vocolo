@@ -35,7 +35,7 @@ pub struct OsuMap {
 }
 
 /// An osu!mappool is represented here
-/// We seperate the mappool from the tournament stage
+/// We separate the mappool from the tournament stage
 /// in order to allow for multiple stages to use the same mappool
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuMappool {
@@ -60,13 +60,15 @@ pub struct OsuTournamentStage {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuMatch {
-    
+    pub blue_team: OsuTeam,
+    pub red_team: OsuTeam,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuTournament {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
+
     /// Human readable id
     pub slug: String,
     /// Tournament name
