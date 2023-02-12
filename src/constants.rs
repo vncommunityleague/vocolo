@@ -5,6 +5,7 @@ use std::str::FromStr;
 #[derive(strum_macros::Display)]
 pub enum EnvironmentVariable {
     // Server
+    SERVER_PUBLIC_URL,
     SERVER_HOST,
     SERVER_PORT,
 
