@@ -22,38 +22,18 @@ lazy_static! {
 }
 
 #[derive(Deserialize)]
-struct OsuCallbackInfo {
+struct Authorization {
     code: String,
 }
 
 #[get("/osu")]
 pub async fn osu_login() -> Result<HttpResponse, HttpError> {
-    login(
-        "https://osu.ppy.sh/oauth/authorize",
-        &EnvironmentVariable::OSU_CLIENT_ID.value(),
-        &OSU_REDIRECT_API,
-        "identify, public",
-    );
     Ok(HttpResponse::Ok().finish())
 }
 
 #[get("/osu/callback")]
 pub async fn osu_login_callback(
-    osu_helper: web::Data<OsuHelper>,
-    info: Query<OsuCallbackInfo>,
+    info: Query<Authorization>,
 ) -> Result<HttpResponse, HttpError> {
-    let osu: Osu = Osu::builder()
-        .with_authorization(info.code.clone(), OSU_REDIRECT_API.clone())
-        .build()
-        .await
-        .unwrap();
-
     Ok(HttpResponse::Ok().finish())
-}
-
-fn login(base_url: &str, client_id: &str, redirect_uri: &str, scope: &str) -> Redirect {
-    Redirect::to(format!(
-        "{}/oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}",
-        base_url, client_id, redirect_uri, scope
-    ))
 }
