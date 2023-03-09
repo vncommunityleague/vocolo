@@ -1,9 +1,9 @@
-use crate::constants::EnvironmentVariable;
-use crate::helper::osu::OsuHelper;
 use actix_web::web::{Data, Query, Redirect};
 use actix_web::{delete, error::HttpError, get, patch, post, web, HttpResponse};
+use common::constants::EnvironmentVariable;
+use common::helper::osu::OsuHelper;
 use lazy_static::lazy_static;
-use rosu_v2::{Osu};
+use rosu_v2::Osu;
 use serde::{Deserialize, Serialize};
 
 lazy_static! {
@@ -32,8 +32,6 @@ pub async fn osu_login() -> Result<HttpResponse, HttpError> {
 }
 
 #[get("/osu/callback")]
-pub async fn osu_login_callback(
-    info: Query<Authorization>,
-) -> Result<HttpResponse, HttpError> {
+pub async fn osu_login_callback(info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
     Ok(HttpResponse::Ok().finish())
 }

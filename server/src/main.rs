@@ -1,18 +1,14 @@
-use crate::constants::EnvironmentVariable;
 use actix_web::{web, App, HttpServer};
+use common::{constants::EnvironmentVariable, helper::osu::OsuHelper};
 
-mod helper;
-mod models;
 mod repository;
 mod routes;
-
-mod constants;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(helper::osu::OsuHelper::init()))
+            .app_data(web::Data::new(OsuHelper::init()))
             .configure(routes::init)
     })
     .bind((
