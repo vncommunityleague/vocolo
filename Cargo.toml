@@ -22,7 +22,7 @@ strum_macros = "0.24"
 
 rosu-v2 = "0.7.0"
 
-[workspaces]
+[workspace]
 members = [
     "bot"
 ]
