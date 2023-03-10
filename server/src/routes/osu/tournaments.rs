@@ -1,4 +1,4 @@
-use actix_web::{delete, error::HttpError, get, patch, post, web, HttpResponse};
+use actix_web::{delete, error::HttpError, get, HttpResponse, patch, post};
 
 #[get("tournaments")]
 pub async fn list() -> Result<HttpResponse, HttpError> {

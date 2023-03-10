@@ -1,4 +1,4 @@
-use actix_web::{delete, error::HttpError, get, patch, post, HttpResponse};
+use actix_web::{delete, error::HttpError, get, HttpResponse, patch, post};
 
 #[get("players")]
 pub async fn list() -> Result<HttpResponse, HttpError> {

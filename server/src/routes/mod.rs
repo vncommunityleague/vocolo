@@ -9,7 +9,9 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("authorize")
             .service(auth::osu_login)
-            .service(auth::osu_login_callback),
+            .service(auth::osu_login_callback)
+            .service(auth::discord_login)
+            .service(auth::discord_login_callback),
     );
 
     cfg.service(web::scope("osu").configure(osu::init));

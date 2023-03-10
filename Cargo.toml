@@ -1,8 +1,8 @@
 [workspace]
 members = [
     "bot",
-	"common",
-	"server",
+    "common",
+    "server",
 ]
 
 [workspace.package]
@@ -17,6 +17,8 @@ common = { path = "common" }
 tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread"] }
 tokio-stream = "0.1.12"
 
+reqwest = { version = "0.11", features = ["json"] }
+
 async-trait = "0.1.66"
 lazy_static = "1.4.0"
 
@@ -30,4 +32,4 @@ strum_macros = "0.24.3"
 
 rosu-v2 = "0.7.0"
 
-serenity = { version = "0.11.5", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+dotenvy = "0.15.6"

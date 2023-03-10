@@ -13,7 +13,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .configure(init_match_routes)
             .configure(init_player_routes)
             .configure(init_team_routes)
-            .configure(init_tournament_routes)
+            .configure(init_tournament_routes),
     );
 }
 
