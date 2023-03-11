@@ -34,3 +34,11 @@ impl EnvironmentVariable {
         }
     }
 }
+
+#[derive(strum_macros::Display)]
+pub enum GameMode {
+    Standard,
+    Taiko,
+    Catch,
+    Mania,
+}
