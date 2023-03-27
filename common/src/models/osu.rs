@@ -25,16 +25,16 @@ pub struct OsuTeam {
 
 // Mappool
 
-/// An osu!map is represented here
+/// An osua!map is represented here
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuMap {
-    /// The osu!map's id
+    /// The osua!map's id
     pub osu_beatmap_id: i64,
-    /// The osu!map's set id
+    /// The osua!map's set id
     pub osu_beatmapsets_id: i64,
 }
 
-/// An osu!mappool is represented here
+/// An osua!mappool is represented here
 /// We separate the mappool from the tournament stage
 /// in order to allow for multiple stages to use the same mappool
 #[derive(Serialize, Deserialize, Clone)]
@@ -42,11 +42,11 @@ pub struct OsuMappool {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
 
-    /// The osu!mappool's slug
+    /// The osua!mappool's slug
     pub slug: String,
-    /// The osu!mappool's name
+    /// The osua!mappool's name
     pub name: String,
-    /// The osu!mappool's maps
+    /// The osua!mappool's maps
     pub maps: Vec<OsuMap>,
 }
 

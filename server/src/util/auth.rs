@@ -1,6 +1,8 @@
 use actix_web::error::HttpError;
-use serde::{Deserialize, Serialize};
+use oauth2::basic::BasicClient;
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DiscordUser {
@@ -13,6 +15,22 @@ pub struct DiscordUser {
 pub struct OsuUser {
     pub id: u64,
     pub username: String,
+}
+
+pub fn create_client(
+    client_id: String,
+    client_secret: String,
+    auth_url: &str,
+    token_url: &str,
+    redirect_url: String,
+) -> BasicClient {
+    BasicClient::new(
+        ClientId::new(client_id),
+        Some(ClientSecret::new(client_secret)),
+        AuthUrl::new(auth_url.to_string()).unwrap(),
+        Some(TokenUrl::new(token_url.to_string()).unwrap()),
+    )
+    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
 }
 
 pub async fn get_discord_user_from_token(access_token: &str) -> Result<DiscordUser, HttpError> {

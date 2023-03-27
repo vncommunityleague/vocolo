@@ -1,5 +1,6 @@
-use common::models::{osu::OsuPlayer, user::User};
 use mongodb::{bson::doc, Client, Collection};
+
+use common::models::{osu::OsuPlayer, user::User};
 
 pub struct UserRepo {
     col: Collection<User>,
@@ -12,16 +13,16 @@ impl UserRepo {
         UserRepo { col }
     }
 
-    pub async fn find_by_osu_id(&self, client: &Client, id: String) -> Option<User> {
+    pub async fn find_by_osu_id(&self, id: String) -> Option<User> {
         let query_result = self
             .col
             .find_one(Some(doc! { "osu_id": id }), None)
             .await
-            .expect(&format!("Cannot find user with osu! id."));
+            .expect(&format!("Cannot find user with osua! id."));
         query_result
     }
 
-    pub async fn find_by_discord_id(&self, client: &Client, id: String) -> Option<User> {
+    pub async fn find_by_discord_id(&self, id: String) -> Option<User> {
         let query_result = self
             .col
             .find_one(Some(doc! { "discord_id": id }), None)
@@ -42,12 +43,12 @@ impl OsuRepo {
         OsuRepo { col }
     }
 
-    pub async fn find_by_osu_id(&self, client: &Client, id: String) -> Option<OsuPlayer> {
+    pub async fn find_by_osu_id(&self, id: String) -> Option<OsuPlayer> {
         let query_result = self
             .col
             .find_one(Some(doc! { "osu_id": id }), None)
             .await
-            .expect(&format!("Cannot find user with osu! id."));
+            .expect(&format!("Cannot find user with osua! id."));
         query_result
     }
 }

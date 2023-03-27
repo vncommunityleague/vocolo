@@ -1,12 +1,9 @@
-use actix_web::{error::HttpError, get, HttpResponse};
-use actix_web::web::Query;
+use actix_web::web::{Query, ServiceConfig};
+use actix_web::{error::HttpError, get, web, HttpResponse};
 use lazy_static::lazy_static;
-use oauth2::{
-    AuthorizationCode, AuthUrl, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
-};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
+use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
 use common::constants::EnvironmentVariable;
@@ -14,36 +11,40 @@ use common::constants::EnvironmentVariable;
 use crate::util::auth;
 
 lazy_static! {
-    static ref DISCORD_REDIRECT_API: String = {
+    static ref DISCORD_CLIENT: BasicClient = auth::create_client(
+        EnvironmentVariable::DISCORD_CLIENT_ID.value(),
+        EnvironmentVariable::DISCORD_CLIENT_SECRET.value(),
+        "https://discord.com/api/oauth2/authorize",
+        "https://discord.com/api/oauth2/token",
         format!(
             "{}/authorize/discord/callback",
             EnvironmentVariable::SERVER_PUBLIC_URL.value()
         )
-    };
-    static ref OSU_REDIRECT_API: String = {
+    );
+    static ref OSU_CLIENT: BasicClient = auth::create_client(
+        EnvironmentVariable::OSU_CLIENT_ID.value(),
+        EnvironmentVariable::OSU_CLIENT_SECRET.value(),
+        "https://osu.ppy.sh/oauth/authorize",
+        "https://osu.ppy.sh/oauth/token",
         format!(
             "{}/authorize/osu/callback",
             EnvironmentVariable::SERVER_PUBLIC_URL.value()
         )
-    };
-    static ref DISCORD_CLIENT: BasicClient = BasicClient::new(
-        ClientId::new(EnvironmentVariable::DISCORD_CLIENT_ID.value()),
-        Some(ClientSecret::new(
-            EnvironmentVariable::DISCORD_CLIENT_SECRET.value()
-        )),
-        AuthUrl::new("https://discord.com/api/oauth2/authorize".to_string()).unwrap(),
-        Some(TokenUrl::new("https://discord.com/api/oauth2/token".to_string()).unwrap())
-    )
-    .set_redirect_uri(RedirectUrl::new(DISCORD_REDIRECT_API.to_string()).unwrap());
-    static ref OSU_CLIENT: BasicClient = BasicClient::new(
-        ClientId::new(EnvironmentVariable::OSU_CLIENT_ID.value()),
-        Some(ClientSecret::new(
-            EnvironmentVariable::OSU_CLIENT_SECRET.value()
-        )),
-        AuthUrl::new("https://osu.ppy.sh/oauth/authorize".to_string()).unwrap(),
-        Some(TokenUrl::new("https://osu.ppy.sh/oauth/token".to_string()).unwrap())
-    )
-    .set_redirect_uri(RedirectUrl::new(OSU_REDIRECT_API.to_string()).unwrap());
+    );
+}
+
+pub fn config(cfg: &mut ServiceConfig) {
+    cfg.service(
+        web::scope("osu")
+            .service(osu_login)
+            .service(osu_login_callback),
+    );
+
+    cfg.service(
+        web::scope("discord")
+            .service(discord_login)
+            .service(discord_login_callback),
+    );
 }
 
 #[derive(Serialize, Deserialize)]
@@ -54,7 +55,7 @@ pub struct Authorization {
 
 // DISCORD
 
-#[get("/discord")]
+#[get("/")]
 pub async fn discord_login() -> Result<HttpResponse, HttpError> {
     let (url, _csrf_token) = DISCORD_CLIENT
         .authorize_url(CsrfToken::new_random)
@@ -66,7 +67,7 @@ pub async fn discord_login() -> Result<HttpResponse, HttpError> {
         .finish())
 }
 
-#[get("/discord/callback")]
+#[get("/callback")]
 pub async fn discord_login_callback(info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
     let token = DISCORD_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
@@ -83,7 +84,7 @@ pub async fn discord_login_callback(info: Query<Authorization>) -> Result<HttpRe
 
 // OSU
 
-#[get("/osu")]
+#[get("/")]
 pub async fn osu_login() -> Result<HttpResponse, HttpError> {
     let (url, _csrf_token) = OSU_CLIENT
         .authorize_url(CsrfToken::new_random)
@@ -96,7 +97,7 @@ pub async fn osu_login() -> Result<HttpResponse, HttpError> {
         .finish())
 }
 
-#[get("/osu/callback")]
+#[get("/callback")]
 pub async fn osu_login_callback(info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
     let token = OSU_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))

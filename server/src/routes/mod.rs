@@ -1,18 +1,10 @@
 use actix_web::web;
 
-mod osu;
-
 mod auth;
+mod osu;
 mod users;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("authorize")
-            .service(auth::osu_login)
-            .service(auth::osu_login_callback)
-            .service(auth::discord_login)
-            .service(auth::discord_login_callback),
-    );
-
-    cfg.service(web::scope("osu").configure(osu::init));
+    cfg.service(web::scope("auth").configure(auth::config));
+    cfg.service(web::scope("osu").configure(osu::config));
 }

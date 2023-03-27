@@ -46,7 +46,7 @@ impl EventHandler for Handler {
         let commands = Command::set_global_application_commands(&ctx.http, |commands| {
             commands.create_application_command(|command| commands::ping::register(command))
         })
-            .await;
+        .await;
 
         println!("current slash commands: {:#?}", commands);
     }
