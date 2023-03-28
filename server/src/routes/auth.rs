@@ -1,4 +1,4 @@
-use actix_web::web::{Query, ServiceConfig};
+use actix_web::web::{Data, Query, ServiceConfig};
 use actix_web::{error::HttpError, get, web, HttpResponse};
 use lazy_static::lazy_static;
 use oauth2::basic::BasicClient;
@@ -7,6 +7,7 @@ use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
 use common::constants::EnvironmentVariable;
+use crate::repository::Repo;
 
 use crate::util::auth;
 
@@ -55,7 +56,7 @@ pub struct Authorization {
 
 // DISCORD
 
-#[get("/")]
+#[get("")]
 pub async fn discord_login() -> Result<HttpResponse, HttpError> {
     let (url, _csrf_token) = DISCORD_CLIENT
         .authorize_url(CsrfToken::new_random)
@@ -68,7 +69,7 @@ pub async fn discord_login() -> Result<HttpResponse, HttpError> {
 }
 
 #[get("/callback")]
-pub async fn discord_login_callback(info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
+pub async fn discord_login_callback(repo: Data<Repo>, info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
     let token = DISCORD_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
@@ -79,12 +80,16 @@ pub async fn discord_login_callback(info: Query<Authorization>) -> Result<HttpRe
         .await
         .unwrap();
 
-    Ok(HttpResponse::Ok().json(user.id))
+    if repo.user.find_by_discord_id(&user.id).await.is_some() {
+        return Ok(HttpResponse::Ok().json(user.id))
+    }
+
+    Ok(HttpResponse::Ok().json("Not found"))
 }
 
 // OSU
 
-#[get("/")]
+#[get("")]
 pub async fn osu_login() -> Result<HttpResponse, HttpError> {
     let (url, _csrf_token) = OSU_CLIENT
         .authorize_url(CsrfToken::new_random)

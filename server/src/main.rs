@@ -1,7 +1,7 @@
-use actix_web::web::Json;
 use actix_web::{web, App, HttpServer};
 
 use common::{constants::EnvironmentVariable, helper::osu::OsuHelper};
+use crate::repository::Repo;
 
 mod repository;
 mod routes;
@@ -12,10 +12,12 @@ mod util;
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
 
+    let repo = Repo::init().await;
+
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(OsuHelper::init()))
-            .service(web::resource("/").to(|| async { "hoaq vu to" }))
+            .app_data(web::Data::new(repo.clone()))
+            .service(web::resource("/").to(|| async { "{ message: \"hoaq vu to\" }" }))
             .configure(routes::init)
     })
     .bind((
