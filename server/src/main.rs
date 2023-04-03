@@ -20,10 +20,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/").to(|| async { "{ message: \"hoaq vu to\" }" }))
             .configure(routes::init)
     })
-    .bind((
-        EnvironmentVariable::SERVER_HOST.value(),
-        EnvironmentVariable::SERVER_PORT.value_with_type::<u16>(),
-    ))?
+    .bind(EnvironmentVariable::ServerHost.value())?
     .run()
     .await
 }

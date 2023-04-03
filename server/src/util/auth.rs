@@ -1,8 +1,10 @@
 use actix_web::error::HttpError;
+use lazy_static::lazy_static;
 use oauth2::basic::BasicClient;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use common::constants::EnvironmentVariable;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DiscordUser {
@@ -15,6 +17,29 @@ pub struct DiscordUser {
 pub struct OsuUser {
     pub id: u64,
     pub username: String,
+}
+
+lazy_static! {
+    pub static ref DISCORD_CLIENT: BasicClient = create_client(
+        EnvironmentVariable::DiscordClientId.value(),
+        EnvironmentVariable::DiscordClientSecret.value(),
+        "https://discord.com/api/oauth2/authorize",
+        "https://discord.com/api/oauth2/token",
+        format!(
+            "{}/authorize/discord/callback",
+            EnvironmentVariable::ServerPublicUrl.value()
+        )
+    );
+    pub static ref OSU_CLIENT: BasicClient = create_client(
+        EnvironmentVariable::OsuClientId.value(),
+        EnvironmentVariable::OsuClientSecret.value(),
+        "https://osu.ppy.sh/oauth/authorize",
+        "https://osu.ppy.sh/oauth/token",
+        format!(
+            "{}/authorize/osu/callback",
+            EnvironmentVariable::ServerPublicUrl.value()
+        )
+    );
 }
 
 pub fn create_client(
@@ -30,7 +55,21 @@ pub fn create_client(
         AuthUrl::new(auth_url.to_string()).unwrap(),
         Some(TokenUrl::new(token_url.to_string()).unwrap()),
     )
-    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
+        .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
+}
+
+pub enum AuthType {
+    Discord,
+    Osu
+}
+
+impl AuthType {
+    pub fn repo_path(&self) -> String {
+        match self {
+            AuthType::Discord => "link.discord",
+            AuthType::Osu => "link.osu"
+        }.to_string()
+    }
 }
 
 pub async fn get_discord_user_from_token(access_token: &str) -> Result<DiscordUser, HttpError> {

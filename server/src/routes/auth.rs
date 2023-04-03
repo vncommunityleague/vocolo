@@ -10,29 +10,7 @@ use common::constants::EnvironmentVariable;
 use crate::repository::Repo;
 
 use crate::util::auth;
-
-lazy_static! {
-    static ref DISCORD_CLIENT: BasicClient = auth::create_client(
-        EnvironmentVariable::DISCORD_CLIENT_ID.value(),
-        EnvironmentVariable::DISCORD_CLIENT_SECRET.value(),
-        "https://discord.com/api/oauth2/authorize",
-        "https://discord.com/api/oauth2/token",
-        format!(
-            "{}/authorize/discord/callback",
-            EnvironmentVariable::SERVER_PUBLIC_URL.value()
-        )
-    );
-    static ref OSU_CLIENT: BasicClient = auth::create_client(
-        EnvironmentVariable::OSU_CLIENT_ID.value(),
-        EnvironmentVariable::OSU_CLIENT_SECRET.value(),
-        "https://osu.ppy.sh/oauth/authorize",
-        "https://osu.ppy.sh/oauth/token",
-        format!(
-            "{}/authorize/osu/callback",
-            EnvironmentVariable::SERVER_PUBLIC_URL.value()
-        )
-    );
-}
+use crate::util::auth::AuthType;
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(
@@ -58,7 +36,7 @@ pub struct Authorization {
 
 #[get("")]
 pub async fn discord_login() -> Result<HttpResponse, HttpError> {
-    let (url, _csrf_token) = DISCORD_CLIENT
+    let (url, _csrf_token) = auth::DISCORD_CLIENT
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
         .url();
@@ -70,7 +48,7 @@ pub async fn discord_login() -> Result<HttpResponse, HttpError> {
 
 #[get("/callback")]
 pub async fn discord_login_callback(repo: Data<Repo>, info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
-    let token = DISCORD_CLIENT
+    let token = auth::DISCORD_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
         .await
@@ -80,7 +58,8 @@ pub async fn discord_login_callback(repo: Data<Repo>, info: Query<Authorization>
         .await
         .unwrap();
 
-    if repo.user.find_by_discord_id(&user.id).await.is_some() {
+    if repo.user.find_by_discord_id(&user.id).await.is_none() {
+        repo.user.create(user.id.clone(), AuthType::Discord).await;
         return Ok(HttpResponse::Ok().json(user.id))
     }
 
@@ -91,7 +70,7 @@ pub async fn discord_login_callback(repo: Data<Repo>, info: Query<Authorization>
 
 #[get("")]
 pub async fn osu_login() -> Result<HttpResponse, HttpError> {
-    let (url, _csrf_token) = OSU_CLIENT
+    let (url, _csrf_token) = auth::OSU_CLIENT
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
         .add_scope(Scope::new("public".to_string()))
@@ -103,8 +82,8 @@ pub async fn osu_login() -> Result<HttpResponse, HttpError> {
 }
 
 #[get("/callback")]
-pub async fn osu_login_callback(info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
-    let token = OSU_CLIENT
+pub async fn osu_login_callback(repo: Data<Repo>, info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
+    let token = auth::OSU_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
         .await
@@ -113,6 +92,11 @@ pub async fn osu_login_callback(info: Query<Authorization>) -> Result<HttpRespon
     let user = auth::get_osu_user_from_token(token.access_token().secret())
         .await
         .unwrap();
+
+    if repo.user.find_by_osu_id(&user.id.to_string()).await.is_none() {
+        repo.user.create(user.id.to_string().clone(), AuthType::Osu).await;
+        return Ok(HttpResponse::Ok().json(user.id))
+    }
 
     Ok(HttpResponse::Ok().json(user.id))
 }

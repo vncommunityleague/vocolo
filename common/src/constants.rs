@@ -1,25 +1,23 @@
 use std::env;
 use std::str::FromStr;
 
-#[allow(non_camel_case_types)] // Seriously, this is annoying.
 #[derive(strum_macros::Display)]
 pub enum EnvironmentVariable {
     // Server
-    SERVER_PUBLIC_URL,
-    SERVER_HOST,
-    SERVER_PORT,
+    ServerPublicUrl,
+    ServerHost,
 
     // MongoDB
-    MONGO_URI,
+    MongoUri,
 
     // Osu
-    OSU_CLIENT_ID,
-    OSU_CLIENT_SECRET,
+    OsuClientId,
+    OsuClientSecret,
 
     // Discord
-    DISCORD_CLIENT_ID,
-    DISCORD_CLIENT_SECRET,
-    DISCORD_BOT_TOKEN,
+    DiscordClientId,
+    DiscordClientSecret,
+    DiscordBotToken,
 }
 
 impl EnvironmentVariable {

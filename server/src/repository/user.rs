@@ -1,6 +1,7 @@
 use mongodb::{Client, Collection};
-use mongodb::bson::doc;
+use mongodb::bson::{doc, Document};
 use common::models::user::User;
+use crate::util::auth::AuthType;
 
 #[derive(Clone)]
 pub struct UserRepo {
@@ -12,6 +13,12 @@ impl UserRepo {
         let db = client.database("VCL");
         let user_col: Collection<User> = db.collection("User");
         UserRepo { user_col }
+    }
+
+    pub async fn create(&self, id: String, auth_type: AuthType) {
+        self.user_col.clone_with_type::<Document>().insert_one( doc! {
+            auth_type.repo_path(): id,
+        }, None).await.unwrap();
     }
 
     pub async fn find_by_osu_id(&self, id: &String) -> Option<User> {

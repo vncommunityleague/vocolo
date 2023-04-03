@@ -12,7 +12,7 @@ pub struct Repo {
 
 impl Repo {
     pub async fn init() -> Self {
-        let client = Client::with_uri_str(EnvironmentVariable::MONGO_URI.value())
+        let client = Client::with_uri_str(EnvironmentVariable::MongoUri.value())
             .await
             .expect("Cannot connect to MongoDB");
 
