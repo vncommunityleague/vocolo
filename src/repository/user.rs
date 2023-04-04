@@ -1,7 +1,7 @@
-use mongodb::{Client, Collection};
-use mongodb::bson::{doc, Document};
-use common::models::user::User;
+use crate::models::user::User;
 use crate::util::auth::AuthType;
+use mongodb::bson::{doc, Document};
+use mongodb::{Client, Collection};
 
 #[derive(Clone)]
 pub struct UserRepo {
@@ -16,9 +16,16 @@ impl UserRepo {
     }
 
     pub async fn create(&self, id: String, auth_type: AuthType) {
-        self.user_col.clone_with_type::<Document>().insert_one( doc! {
-            auth_type.repo_path(): id,
-        }, None).await.unwrap();
+        self.user_col
+            .clone_with_type::<Document>()
+            .insert_one(
+                doc! {
+                    auth_type.repo_path(): id,
+                },
+                None,
+            )
+            .await
+            .unwrap();
     }
 
     pub async fn find_by_osu_id(&self, id: &String) -> Option<User> {

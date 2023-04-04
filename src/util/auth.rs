@@ -1,10 +1,10 @@
+use crate::util::constants::EnvironmentVariable;
 use actix_web::error::HttpError;
 use lazy_static::lazy_static;
 use oauth2::basic::BasicClient;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use common::constants::EnvironmentVariable;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DiscordUser {
@@ -55,20 +55,21 @@ pub fn create_client(
         AuthUrl::new(auth_url.to_string()).unwrap(),
         Some(TokenUrl::new(token_url.to_string()).unwrap()),
     )
-        .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
+    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
 }
 
 pub enum AuthType {
     Discord,
-    Osu
+    Osu,
 }
 
 impl AuthType {
     pub fn repo_path(&self) -> String {
         match self {
             AuthType::Discord => "link.discord",
-            AuthType::Osu => "link.osu"
-        }.to_string()
+            AuthType::Osu => "link.osu",
+        }
+        .to_string()
     }
 }
 

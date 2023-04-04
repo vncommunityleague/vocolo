@@ -1,12 +1,10 @@
 use actix_web::web::{Data, Query, ServiceConfig};
 use actix_web::{error::HttpError, get, web, HttpResponse};
-use lazy_static::lazy_static;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
-use common::constants::EnvironmentVariable;
 use crate::repository::Repo;
 
 use crate::util::auth;
@@ -47,7 +45,10 @@ pub async fn discord_login() -> Result<HttpResponse, HttpError> {
 }
 
 #[get("/callback")]
-pub async fn discord_login_callback(repo: Data<Repo>, info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
+pub async fn discord_login_callback(
+    repo: Data<Repo>,
+    info: Query<Authorization>,
+) -> Result<HttpResponse, HttpError> {
     let token = auth::DISCORD_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
@@ -60,7 +61,7 @@ pub async fn discord_login_callback(repo: Data<Repo>, info: Query<Authorization>
 
     if repo.user.find_by_discord_id(&user.id).await.is_none() {
         repo.user.create(user.id.clone(), AuthType::Discord).await;
-        return Ok(HttpResponse::Ok().json(user.id))
+        return Ok(HttpResponse::Ok().json(user.id));
     }
 
     Ok(HttpResponse::Ok().json("Not found"))
@@ -82,7 +83,10 @@ pub async fn osu_login() -> Result<HttpResponse, HttpError> {
 }
 
 #[get("/callback")]
-pub async fn osu_login_callback(repo: Data<Repo>, info: Query<Authorization>) -> Result<HttpResponse, HttpError> {
+pub async fn osu_login_callback(
+    repo: Data<Repo>,
+    info: Query<Authorization>,
+) -> Result<HttpResponse, HttpError> {
     let token = auth::OSU_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
@@ -93,9 +97,16 @@ pub async fn osu_login_callback(repo: Data<Repo>, info: Query<Authorization>) ->
         .await
         .unwrap();
 
-    if repo.user.find_by_osu_id(&user.id.to_string()).await.is_none() {
-        repo.user.create(user.id.to_string().clone(), AuthType::Osu).await;
-        return Ok(HttpResponse::Ok().json(user.id))
+    if repo
+        .user
+        .find_by_osu_id(&user.id.to_string())
+        .await
+        .is_none()
+    {
+        repo.user
+            .create(user.id.to_string().clone(), AuthType::Osu)
+            .await;
+        return Ok(HttpResponse::Ok().json(user.id));
     }
 
     Ok(HttpResponse::Ok().json(user.id))

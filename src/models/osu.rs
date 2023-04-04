@@ -71,8 +71,8 @@ pub struct OsuTournament {
 
     /// Human readable id
     pub slug: String,
-    /// Tournament name
-    pub name: String,
+    /// Tournament title
+    pub title: String,
     pub stages: Vec<OsuTournamentStage>,
     pub teams: Vec<OsuTeam>,
     pub players: Vec<OsuPlayer>,

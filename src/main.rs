@@ -1,11 +1,14 @@
 use actix_web::{web, App, HttpServer};
 
-use common::{constants::EnvironmentVariable, helper::osu::OsuHelper};
 use crate::repository::Repo;
+use helper::osu::OsuHelper;
+use util::constants::EnvironmentVariable;
 
 mod repository;
 mod routes;
 
+pub mod helper;
+pub mod models;
 mod util;
 
 #[actix_rt::main]

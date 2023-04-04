@@ -1,6 +1,6 @@
 use rosu_v2::Osu;
 
-use crate::constants::EnvironmentVariable;
+use crate::util::constants::EnvironmentVariable;
 
 pub struct OsuHelper {
     pub osu: Osu,

@@ -17,7 +17,6 @@ pub enum EnvironmentVariable {
     // Discord
     DiscordClientId,
     DiscordClientSecret,
-    DiscordBotToken,
 }
 
 impl EnvironmentVariable {
