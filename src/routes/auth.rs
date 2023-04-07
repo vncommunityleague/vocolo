@@ -1,11 +1,11 @@
 use actix_web::web::{Data, Query, ServiceConfig};
-use actix_web::{error::HttpError, get, web, HttpResponse};
-use oauth2::basic::BasicClient;
+use actix_web::{get, web, HttpResponse};
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
+use crate::routes::ApiError;
 
 use crate::util::auth;
 use crate::util::auth::AuthType;
@@ -33,7 +33,7 @@ pub struct Authorization {
 // DISCORD
 
 #[get("")]
-pub async fn discord_login() -> Result<HttpResponse, HttpError> {
+pub async fn discord_login() -> Result<HttpResponse, ApiError> {
     let (url, _csrf_token) = auth::DISCORD_CLIENT
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
@@ -48,7 +48,7 @@ pub async fn discord_login() -> Result<HttpResponse, HttpError> {
 pub async fn discord_login_callback(
     repo: Data<Repo>,
     info: Query<Authorization>,
-) -> Result<HttpResponse, HttpError> {
+) -> Result<HttpResponse, ApiError> {
     let token = auth::DISCORD_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
@@ -70,7 +70,7 @@ pub async fn discord_login_callback(
 // OSU
 
 #[get("")]
-pub async fn osu_login() -> Result<HttpResponse, HttpError> {
+pub async fn osu_login() -> Result<HttpResponse, ApiError> {
     let (url, _csrf_token) = auth::OSU_CLIENT
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
@@ -86,7 +86,7 @@ pub async fn osu_login() -> Result<HttpResponse, HttpError> {
 pub async fn osu_login_callback(
     repo: Data<Repo>,
     info: Query<Authorization>,
-) -> Result<HttpResponse, HttpError> {
+) -> Result<HttpResponse, ApiError> {
     let token = auth::OSU_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)

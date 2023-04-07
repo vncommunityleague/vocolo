@@ -1,7 +1,9 @@
 use crate::models::user::User;
 use crate::util::auth::AuthType;
+use crate::util::constants::Database;
 use mongodb::bson::{doc, Document};
 use mongodb::{Client, Collection};
+use strum::EnumProperty;
 
 #[derive(Clone)]
 pub struct UserRepo {
@@ -10,7 +12,7 @@ pub struct UserRepo {
 
 impl UserRepo {
     pub async fn init(client: &Client) -> Self {
-        let db = client.database("VCL");
+        let db = client.database(Database::Main.get_str("db_name").unwrap());
         let user_col: Collection<User> = db.collection("User");
         UserRepo { user_col }
     }

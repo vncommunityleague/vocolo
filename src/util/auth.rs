@@ -1,5 +1,5 @@
+use crate::routes::ApiError;
 use crate::util::constants::EnvironmentVariable;
-use actix_web::error::HttpError;
 use lazy_static::lazy_static;
 use oauth2::basic::BasicClient;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
@@ -73,11 +73,11 @@ impl AuthType {
     }
 }
 
-pub async fn get_discord_user_from_token(access_token: &str) -> Result<DiscordUser, HttpError> {
+pub async fn get_discord_user_from_token(access_token: &str) -> Result<DiscordUser, ApiError> {
     Ok(get_user_from_token("https://discord.com/api/users/@me", access_token).await)
 }
 
-pub async fn get_osu_user_from_token(access_token: &str) -> Result<OsuUser, HttpError> {
+pub async fn get_osu_user_from_token(access_token: &str) -> Result<OsuUser, ApiError> {
     Ok(get_user_from_token("https://osu.ppy.sh/api/v2/me", access_token).await)
 }
 

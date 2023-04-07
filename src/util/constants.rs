@@ -1,6 +1,14 @@
 use std::env;
 use std::str::FromStr;
 
+#[derive(strum_macros::Display, strum_macros::EnumProperty)]
+pub enum Database {
+    #[strum(props(db_name = "vcl"))]
+    Main,
+    #[strum(props(db_name = "vcl_osu"))]
+    Osu,
+}
+
 #[derive(strum_macros::Display)]
 pub enum EnvironmentVariable {
     // Server
@@ -30,12 +38,4 @@ impl EnvironmentVariable {
             Err(_) => panic!("{} is not suitable for this type", self),
         }
     }
-}
-
-#[derive(strum_macros::Display)]
-pub enum GameMode {
-    Standard,
-    Taiko,
-    Catch,
-    Mania,
 }

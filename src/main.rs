@@ -1,7 +1,6 @@
 use actix_web::{web, App, HttpServer};
 
 use crate::repository::Repo;
-use helper::osu::OsuHelper;
 use util::constants::EnvironmentVariable;
 
 mod repository;
