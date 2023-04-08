@@ -7,7 +7,6 @@ use crate::repository::Repo;
 mod repository;
 mod routes;
 
-pub mod helper;
 pub mod models;
 mod util;
 

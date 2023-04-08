@@ -4,6 +4,7 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::OsuTeam;
+use crate::models::tournament::TeamInfo;
 use crate::repository::Repo;
 use crate::routes::ApiError;
 
@@ -36,15 +37,17 @@ pub async fn teams_create(
     let mut tournament = tournament.unwrap();
 
     let mut team = OsuTeam {
-        id: ObjectId::new(),
-        name: data.name.clone(),
-        avatar_url: "".to_string(),
+        info: TeamInfo {
+            id: Some(ObjectId::new()),
+            name: data.name.clone(),
+            avatar_url: None,
+        },
         captain: 0,
         players: vec![],
     };
 
     if data.avatar_url.is_some() {
-        team.avatar_url = data.avatar_url.clone().unwrap();
+        team.info.avatar_url = Some(data.avatar_url.clone().unwrap());
     }
 
     tournament.teams.push(team.clone());
@@ -104,7 +107,7 @@ pub async fn teams_delete(
     let index = tournament
         .teams
         .iter()
-        .position(|x| x.id.to_string().eq(&team_id));
+        .position(|x| x.info.id.unwrap_or_default().to_string().eq(&team_id));
 
     if index.is_none() {
         return Err(ApiError::TeamNotFound);

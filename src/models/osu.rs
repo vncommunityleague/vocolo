@@ -46,7 +46,7 @@ pub enum TeamFormat {}
 /// An osu!team is represented here
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuTeam {
-    info: TeamInfo,
+    pub info: TeamInfo,
 
     /// The osu!user id of the team's captain
     pub captain: u64,
