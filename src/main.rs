@@ -1,4 +1,4 @@
-use actix_web::{App, HttpServer, web};
+use actix_web::{web, App, HttpServer};
 
 use util::constants::EnvironmentVariable;
 
@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/").to(|| async { "{ message: \"hoaq vu to\" }" }))
             .configure(routes::init)
     })
-        .bind(EnvironmentVariable::ServerHost.value())?
-        .run()
-        .await
+    .bind(EnvironmentVariable::ServerHost.value())?
+    .run()
+    .await
 }

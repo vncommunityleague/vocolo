@@ -1,6 +1,6 @@
-use actix_web::{HttpResponse, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
+use actix_web::{web, HttpResponse, ResponseError};
 use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
 
@@ -22,11 +22,14 @@ pub enum ApiError {
     #[display(fmt = "Tournament not found")]
     TournamentNotFound,
 
+    #[display(fmt = "Mappool not found")]
+    MappoolNotFound,
+
     #[display(fmt = "Team not found")]
     TeamNotFound,
 
     #[display(fmt = "User not found")]
-    UserNotFound
+    UserNotFound,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -40,6 +43,7 @@ impl ResponseError for ApiError {
         match *self {
             ApiError::InvalidInput { .. } => StatusCode::BAD_REQUEST,
             ApiError::TournamentNotFound => StatusCode::NOT_FOUND,
+            ApiError::MappoolNotFound => StatusCode::NOT_FOUND,
             ApiError::TeamNotFound => StatusCode::NOT_FOUND,
             ApiError::UserNotFound => StatusCode::NOT_FOUND,
         }
@@ -50,6 +54,7 @@ impl ResponseError for ApiError {
             error: match *self {
                 ApiError::InvalidInput { .. } => "invalid_input",
                 ApiError::TournamentNotFound => "tournament_not_found",
+                ApiError::MappoolNotFound => "mappool_not_found",
                 ApiError::TeamNotFound => "team_not_found",
                 ApiError::UserNotFound => "user_not_found",
             },

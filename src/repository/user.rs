@@ -1,6 +1,6 @@
-use mongodb::{Client, Collection};
-use mongodb::bson::{doc, Document};
 use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, Document};
+use mongodb::{Client, Collection};
 
 use crate::models::user::User;
 use crate::util::auth::AuthType;
@@ -63,7 +63,10 @@ impl UserRepo {
 
     pub async fn find_user_by_id(&self, id: &str) -> Option<User> {
         self.user_col
-            .find_one(Some(doc! { "_id": ObjectId::parse_str(id).unwrap_or_default() }), None)
+            .find_one(
+                Some(doc! { "_id": ObjectId::parse_str(id).unwrap_or_default() }),
+                None,
+            )
             .await
             .unwrap_or(None)
     }

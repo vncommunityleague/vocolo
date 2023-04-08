@@ -1,7 +1,7 @@
-use actix_web::{get, HttpResponse, web};
 use actix_web::web::{Data, Query, ServiceConfig};
-use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
+use actix_web::{get, web, HttpResponse};
 use oauth2::reqwest::async_http_client;
+use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
@@ -11,15 +11,15 @@ use crate::util::auth::AuthType;
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(
-        web::scope("osu")
-            .service(osu_login)
-            .service(osu_login_callback),
-    );
-
-    cfg.service(
         web::scope("discord")
             .service(discord_login)
             .service(discord_login_callback),
+    );
+
+    cfg.service(
+        web::scope("osu")
+            .service(osu_login)
+            .service(osu_login_callback),
     );
 }
 

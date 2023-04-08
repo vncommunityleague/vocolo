@@ -1,5 +1,5 @@
-use actix_web::{get, HttpResponse, patch, post, web};
 use actix_web::web::{Data, ServiceConfig};
+use actix_web::{get, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
@@ -14,7 +14,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 #[get("{tournament_id}/players")]
 pub async fn players_tournament_get(
     repo: Data<Repo>,
-    info: web::Path<(String, )>,
+    info: web::Path<(String,)>,
 ) -> Result<HttpResponse, ApiError> {
     let tournament_id = info.into_inner().0;
     let tournament = repo.osu.find_tournament_by_id_or_slug(&tournament_id).await;
@@ -26,7 +26,12 @@ pub async fn players_tournament_get(
     let mut players = Vec::new();
 
     for player in tournament.unwrap().players().await {
-        players.push(repo.user.find_user_by_osu_id(&player.to_string()).await.unwrap());
+        players.push(
+            repo.user
+                .find_user_by_osu_id(&player.to_string())
+                .await
+                .unwrap(),
+        );
     }
 
     Ok(HttpResponse::Ok().json(players))
@@ -83,9 +88,13 @@ pub async fn players_team_add(
         return Err(ApiError::TeamNotFound);
     }
 
-    tournament.teams[team_pos.unwrap()].players.push(data.osu_id);
+    tournament.teams[team_pos.unwrap()]
+        .players
+        .push(data.osu_id);
 
-    repo.osu.replace_tournament(tournament_id, tournament.clone()).await;
+    repo.osu
+        .replace_tournament(tournament_id, tournament.clone())
+        .await;
 
     Ok(HttpResponse::NoContent().finish())
 }

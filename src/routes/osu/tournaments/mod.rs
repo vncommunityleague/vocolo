@@ -1,6 +1,6 @@
 use actix_web::{
-    {delete, get, HttpResponse, patch, post, web},
     web::{Data, ServiceConfig},
+    {delete, get, patch, post, web, HttpResponse},
 };
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
@@ -11,6 +11,8 @@ use crate::routes::ApiError;
 mod mappools;
 mod matches;
 mod players;
+mod staff;
+mod stages;
 mod teams;
 
 pub fn config(cfg: &mut ServiceConfig) {
@@ -21,6 +23,7 @@ pub fn config(cfg: &mut ServiceConfig) {
             .service(tournaments_create)
             .service(tournaments_modify)
             .service(tournaments_delete)
+            .configure(mappools::config)
             .configure(players::config)
             .configure(teams::config),
     );
@@ -36,7 +39,7 @@ struct OsuTournamentResponse {
 #[get("{tournament_id}")]
 pub async fn tournaments_get(
     repo: Data<Repo>,
-    info: web::Path<(String, )>,
+    info: web::Path<(String,)>,
 ) -> Result<HttpResponse, ApiError> {
     let id_or_slug = info.into_inner().0;
     let tournament = repo.osu.find_tournament_by_id_or_slug(&id_or_slug).await;
@@ -53,11 +56,11 @@ pub async fn tournaments_get(
 pub async fn tournaments_list(repo: Data<Repo>) -> Result<HttpResponse, ApiError> {
     let tournaments = repo.osu.list_tournaments().await;
 
-    if tournaments.is_some() {
-        Ok(HttpResponse::Ok().json(tournaments.unwrap()))
-    } else {
-        Ok(HttpResponse::NotFound().finish())
+    if tournaments.is_none() {
+        return Err(ApiError::TournamentNotFound);
     }
+
+    Ok(HttpResponse::Ok().json(tournaments.unwrap()))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -88,7 +91,7 @@ pub struct TournamentEditRequest {
 #[patch("{tournament_id}")]
 pub async fn tournaments_modify(
     repo: Data<Repo>,
-    info: web::Path<(String, )>,
+    info: web::Path<(String,)>,
     data: web::Json<TournamentEditRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // let id_or_slug = info.into_inner().0;
@@ -107,7 +110,7 @@ pub async fn tournaments_modify(
 #[delete("{tournament_id}")]
 pub async fn tournaments_delete(
     repo: Data<Repo>,
-    info: web::Path<(String, )>,
+    info: web::Path<(String,)>,
 ) -> Result<HttpResponse, ApiError> {
     let id_or_slug = info.into_inner().0;
 

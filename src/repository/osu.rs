@@ -1,6 +1,6 @@
-use mongodb::{bson::doc, Client, Collection};
-use mongodb::bson::Document;
 use mongodb::bson::oid::ObjectId;
+use mongodb::bson::Document;
+use mongodb::{bson::doc, Client, Collection};
 use tokio_stream::StreamExt;
 
 use crate::models::osu::OsuTournament;
@@ -34,7 +34,7 @@ impl OsuRepo {
                 { "slug": id_or_slug }
             ]
         })
-            .await
+        .await
     }
 
     /// Finds and returns all [`OsuTournament`] that match the id or slug.
@@ -82,6 +82,7 @@ impl OsuRepo {
         let query_result = self
             .tournaments
             .clone_with_type::<Document>()
+            // TODO: Using model instead of document
             .insert_one(
                 doc! {
                     "slug": slug,

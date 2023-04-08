@@ -1,7 +1,7 @@
-use actix_web::{get, HttpResponse, web};
-use actix_web::web::{Data, ServiceConfig};
 use crate::repository::Repo;
 use crate::routes::ApiError;
+use actix_web::web::{Data, ServiceConfig};
+use actix_web::{get, web, HttpResponse};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(get_current_user);
@@ -24,7 +24,7 @@ pub async fn get_user(
     let user = repo.user.find_user(id).await;
 
     if user.is_none() {
-        return Err(ApiError::UserNotFound)
+        return Err(ApiError::UserNotFound);
     }
 
     Ok(HttpResponse::Ok().json(user.unwrap()))

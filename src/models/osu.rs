@@ -1,6 +1,8 @@
+use crate::models::tournament::{MatchInfo, TeamInfo, TournamentInfo};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Clone)]
 pub enum GameMode {
     Standard,
     Taiko,
@@ -8,6 +10,7 @@ pub enum GameMode {
     Mania,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
 pub enum BeatmapMod {
     NoMod,
     Hidden,
@@ -36,27 +39,29 @@ impl BeatmapMod {
     }
 }
 
+pub enum ScoreType {}
+
+pub enum TeamFormat {}
+
 /// An osu!team is represented here
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuTeam {
-    pub id: ObjectId,
-    pub name: String,
-    pub avatar_url: String,
+    info: TeamInfo,
+
+    /// The osu!user id of the team's captain
     pub captain: u64,
     /// Contains the osu!user ids
     #[serde(default)]
     pub players: Vec<u64>,
 }
 
-// Mappool
-
 /// An osu!map is represented here
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuMap {
     /// The osu!map's id
     pub osu_beatmap_id: i64,
-    /// The osu!map's set id
-    pub osu_beatmapsets_id: i64,
+    /// The modifier of the map
+    pub modifier: BeatmapMod,
 }
 
 /// An osu!mappool is represented here
@@ -76,11 +81,12 @@ pub struct OsuMappool {
 // Tournament
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuMatch {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    pub info: MatchInfo,
 
     pub blue_team: OsuTeam,
     pub red_team: OsuTeam,
+
+    pub osu_match_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -95,17 +101,10 @@ pub struct OsuTournamentStage {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuTournament {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    #[serde(flatten)]
+    pub info: TournamentInfo,
 
-    // pub created_at: i64,
-    //
-    // pub updated_at: i64,
-    /// Human readable id
-    pub slug: String,
-    /// Tournament title
-    pub title: String,
-
+    // pub game_mode: GameMode,
     #[serde(default)]
     pub teams: Vec<OsuTeam>,
 
@@ -115,15 +114,12 @@ pub struct OsuTournament {
     /// The current stage of the tournament
     #[serde(skip_serializing_if = "Option::is_none")]
     pub current_stage: Option<ObjectId>,
-
-    #[serde(default)]
-    pub stages: Vec<OsuTournamentStage>,
 }
 
 impl OsuTournament {
     pub async fn get_team_position(&self, name: String) -> Option<usize> {
         for (i, team) in self.teams.iter().enumerate() {
-            if team.name == name {
+            if team.info.name == name {
                 return Some(i);
             }
         }
@@ -133,8 +129,18 @@ impl OsuTournament {
 
     pub async fn get_team(&self, name: String) -> Option<OsuTeam> {
         for team in &self.teams {
-            if team.name == name {
+            if team.info.name == name {
                 return Some(team.clone());
+            }
+        }
+
+        None
+    }
+
+    pub async fn get_mappool(&self, slug: String) -> Option<OsuMappool> {
+        for mappool in &self.mappools {
+            if mappool.slug == slug {
+                return Some(mappool.clone());
             }
         }
 

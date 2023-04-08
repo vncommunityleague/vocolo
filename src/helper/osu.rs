@@ -14,7 +14,7 @@ impl OsuHelper {
         Self {
             osu: match Osu::new(osu_client_id, osu_client_secret).await {
                 Ok(client) => client,
-                Err(err) => panic!("Error while creating osua! client: {}", err),
+                Err(err) => panic!("Error while creating osu! client: {}", err),
             },
         }
     }

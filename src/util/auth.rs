@@ -1,8 +1,8 @@
 use lazy_static::lazy_static;
-use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use oauth2::basic::BasicClient;
-use serde::{Deserialize, Serialize};
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 use crate::routes::ApiError;
 use crate::util::constants::EnvironmentVariable;
@@ -56,7 +56,7 @@ pub fn create_client(
         AuthUrl::new(auth_url.to_string()).unwrap(),
         Some(TokenUrl::new(token_url.to_string()).unwrap()),
     )
-        .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
+    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
 }
 
 pub enum AuthType {
@@ -70,7 +70,7 @@ impl AuthType {
             AuthType::Discord => "link.discord",
             AuthType::Osu => "link.osu",
         }
-            .to_string()
+        .to_string()
     }
 }
 

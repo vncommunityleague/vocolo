@@ -1,5 +1,5 @@
-use actix_web::{delete, HttpResponse, patch, post, web};
 use actix_web::web::{Data, ServiceConfig};
+use actix_web::{delete, patch, post, web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -22,16 +22,15 @@ pub struct TeamCreateRequest {
 #[post("{tournament_id}/teams")]
 pub async fn teams_create(
     repo: Data<Repo>,
-    info: web::Path<(String, )>,
+    info: web::Path<(String,)>,
     data: web::Json<TeamCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
     let path = info.into_inner();
     let tournament_id = path.0;
-
     let tournament = repo.osu.find_tournament_by_id_or_slug(&tournament_id).await;
 
     if tournament.is_none() {
-        return Ok(HttpResponse::NotFound().finish());
+        return Err(ApiError::TournamentNotFound);
     }
 
     let mut tournament = tournament.unwrap();
@@ -79,11 +78,11 @@ pub async fn teams_modify(
 
     let team = tournament.unwrap().get_team(team_id).await;
 
-    if team.is_some() {
-        Ok(HttpResponse::Ok().json(team))
-    } else {
-        Ok(HttpResponse::NotFound().finish())
+    if team.is_none() {
+        return Err(ApiError::TeamNotFound);
     }
+
+    Ok(HttpResponse::Ok().json(team))
 }
 
 #[delete("{tournament_id}/teams/{team_id}")]
@@ -107,12 +106,12 @@ pub async fn teams_delete(
         .iter()
         .position(|x| x.id.to_string().eq(&team_id));
 
-    if index.is_some() {
-        tournament.teams.remove(index.unwrap());
-        repo.osu.replace_tournament(tournament_id, tournament).await;
-
-        Ok(HttpResponse::NoContent().finish())
-    } else {
-        Ok(HttpResponse::NotFound().finish())
+    if index.is_none() {
+        return Err(ApiError::TeamNotFound);
     }
+
+    tournament.teams.remove(index.unwrap());
+    repo.osu.replace_tournament(tournament_id, tournament).await;
+
+    Ok(HttpResponse::NoContent().finish())
 }
