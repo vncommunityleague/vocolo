@@ -1,3 +1,4 @@
+use derive_more::Display;
 use crate::models::tournament::{MatchInfo, TeamInfo, TournamentInfo};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
@@ -10,33 +11,26 @@ pub enum GameMode {
     Mania,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Display, Serialize, Deserialize, Clone)]
 pub enum BeatmapMod {
-    NoMod,
-    Hidden,
-    HardRock,
-    DoubleTime,
-    FreeMod,
-    Easy,
-    HalfTime,
-    Flashlight,
-    Tiebreaker,
-}
-
-impl BeatmapMod {
-    pub async fn id(&self) -> &str {
-        match *self {
-            BeatmapMod::NoMod => "NM",
-            BeatmapMod::Hidden => "HD",
-            BeatmapMod::HardRock => "HR",
-            BeatmapMod::DoubleTime => "DT",
-            BeatmapMod::FreeMod => "FM",
-            BeatmapMod::Easy => "EZ",
-            BeatmapMod::HalfTime => "HT",
-            BeatmapMod::Flashlight => "FL",
-            BeatmapMod::Tiebreaker => "TB",
-        }
-    }
+    #[display(fmt = "NoMod")]
+    NM,
+    #[display(fmt = "Hidden")]
+    HD,
+    #[display(fmt = "HardRock")]
+    HR,
+    #[display(fmt = "DoubleTime")]
+    DT,
+    #[display(fmt = "FreeMod")]
+    FM,
+    #[display(fmt = "Easy")]
+    EZ,
+    #[display(fmt = "HalfTime")]
+    HT,
+    #[display(fmt = "Flashlight")]
+    FL,
+    #[display(fmt = "Tiebreaker")]
+    TB,
 }
 
 pub enum ScoreType {}
