@@ -1,12 +1,11 @@
+use actix_web::{get, HttpResponse, web};
 use actix_web::web::{Data, Query, ServiceConfig};
-use actix_web::{get, web, HttpResponse};
-use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
+use oauth2::reqwest::async_http_client;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
 use crate::routes::ApiError;
-
 use crate::util::auth;
 use crate::util::auth::AuthType;
 
@@ -59,8 +58,8 @@ pub async fn discord_login_callback(
         .await
         .unwrap();
 
-    if repo.user.find_by_discord_id(&user.id).await.is_none() {
-        repo.user.create(user.id.clone(), AuthType::Discord).await;
+    if repo.user.find_user_by_discord_id(&user.id).await.is_none() {
+        repo.user.create(&user.id, &AuthType::Discord).await;
         return Ok(HttpResponse::Ok().json(user.id));
     }
 
@@ -99,12 +98,12 @@ pub async fn osu_login_callback(
 
     if repo
         .user
-        .find_by_osu_id(&user.id.to_string())
+        .find_user_by_osu_id(&user.id.to_string())
         .await
         .is_none()
     {
         repo.user
-            .create(user.id.to_string().clone(), AuthType::Osu)
+            .create(&*user.id.to_string().clone(), &AuthType::Osu)
             .await;
         return Ok(HttpResponse::Ok().json(user.id));
     }

@@ -1,7 +1,6 @@
-use mongodb::bson::oid::ObjectId;
-use mongodb::bson::Document;
 use mongodb::{bson::doc, Client, Collection};
-use strum::EnumProperty;
+use mongodb::bson::Document;
+use mongodb::bson::oid::ObjectId;
 use tokio_stream::StreamExt;
 
 use crate::models::osu::OsuTournament;
@@ -16,7 +15,7 @@ pub struct OsuRepo {
 
 impl OsuRepo {
     pub async fn init(client: &Client) -> Self {
-        let db = client.database(Database::Osu.get_str("db_name").unwrap());
+        let db = client.database(Database::Osu.db_name());
         let tournaments: Collection<OsuTournament> = db.collection("tournaments");
 
         OsuRepo { tournaments }
@@ -35,7 +34,7 @@ impl OsuRepo {
                 { "slug": id_or_slug }
             ]
         })
-        .await
+            .await
     }
 
     /// Finds and returns all [`OsuTournament`] that match the id or slug.

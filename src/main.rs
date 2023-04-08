@@ -1,7 +1,8 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer, web};
+
+use util::constants::EnvironmentVariable;
 
 use crate::repository::Repo;
-use util::constants::EnvironmentVariable;
 
 mod repository;
 mod routes;
@@ -22,7 +23,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/").to(|| async { "{ message: \"hoaq vu to\" }" }))
             .configure(routes::init)
     })
-    .bind(EnvironmentVariable::ServerHost.value())?
-    .run()
-    .await
+        .bind(EnvironmentVariable::ServerHost.value())?
+        .run()
+        .await
 }

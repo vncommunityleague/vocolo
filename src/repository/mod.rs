@@ -1,5 +1,6 @@
-use crate::util::constants::EnvironmentVariable;
 use mongodb::Client;
+
+use crate::util::constants::EnvironmentVariable;
 
 pub mod osu;
 pub mod user;

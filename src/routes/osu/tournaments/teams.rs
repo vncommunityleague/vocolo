@@ -1,10 +1,11 @@
+use actix_web::{delete, HttpResponse, patch, post, web};
+use actix_web::web::{Data, ServiceConfig};
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
+
 use crate::models::osu::OsuTeam;
 use crate::repository::Repo;
 use crate::routes::ApiError;
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, get, patch, post, web, HttpResponse};
-use mongodb::bson::oid::ObjectId;
-use serde::{Deserialize, Serialize};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(teams_create);
@@ -13,7 +14,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct TeamCreationData {
+pub struct TeamCreateRequest {
     pub name: String,
     pub avatar_url: Option<String>,
 }
@@ -21,8 +22,8 @@ pub struct TeamCreationData {
 #[post("{tournament_id}/teams")]
 pub async fn teams_create(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
-    data: web::Json<TeamCreationData>,
+    info: web::Path<(String, )>,
+    data: web::Json<TeamCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
     let path = info.into_inner();
     let tournament_id = path.0;
@@ -39,7 +40,7 @@ pub async fn teams_create(
         id: ObjectId::new(),
         name: data.name.clone(),
         avatar_url: "".to_string(),
-        captain: None,
+        captain: 0,
         players: vec![],
     };
 

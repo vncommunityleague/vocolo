@@ -1,7 +1,8 @@
+use actix_web::{delete, get, HttpResponse, patch, post, web};
+use actix_web::web::{Data, ServiceConfig};
+
 use crate::repository::Repo;
 use crate::routes::ApiError;
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, get, patch, post, web, HttpResponse};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(

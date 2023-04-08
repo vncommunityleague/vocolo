@@ -1,15 +1,16 @@
-use crate::models::osu::OsuTeam;
-use crate::repository::Repo;
-use crate::routes::ApiError;
 use actix_web::{
+    {delete, get, HttpResponse, patch, post, web},
     web::{Data, ServiceConfig},
-    {delete, get, patch, post, web, HttpResponse},
 };
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
+use crate::repository::Repo;
+use crate::routes::ApiError;
+
 mod mappools;
 mod matches;
+mod players;
 mod teams;
 
 pub fn config(cfg: &mut ServiceConfig) {
@@ -20,6 +21,7 @@ pub fn config(cfg: &mut ServiceConfig) {
             .service(tournaments_create)
             .service(tournaments_modify)
             .service(tournaments_delete)
+            .configure(players::config)
             .configure(teams::config),
     );
 }
@@ -34,16 +36,16 @@ struct OsuTournamentResponse {
 #[get("{tournament_id}")]
 pub async fn tournaments_get(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
+    info: web::Path<(String, )>,
 ) -> Result<HttpResponse, ApiError> {
     let id_or_slug = info.into_inner().0;
     let tournament = repo.osu.find_tournament_by_id_or_slug(&id_or_slug).await;
 
-    if tournament.is_some() {
-        Ok(HttpResponse::Ok().json(tournament))
-    } else {
-        Ok(HttpResponse::NotFound().finish())
+    if tournament.is_none() {
+        return Err(ApiError::TournamentNotFound);
     }
+
+    Ok(HttpResponse::Ok().json(tournament))
 }
 
 // TODO: Add SearchConfig
@@ -59,7 +61,7 @@ pub async fn tournaments_list(repo: Data<Repo>) -> Result<HttpResponse, ApiError
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct TournamentCreationData {
+pub struct TournamentCreateRequest {
     pub title: String,
     pub slug: String,
 }
@@ -67,7 +69,7 @@ pub struct TournamentCreationData {
 #[post("")]
 pub async fn tournaments_create(
     repo: Data<Repo>,
-    data: web::Json<TournamentCreationData>,
+    data: web::Json<TournamentCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // TODO: Handle duplicate slugs
     let tournament_id = repo
@@ -78,7 +80,7 @@ pub async fn tournaments_create(
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct TournamentEditData {
+pub struct TournamentEditRequest {
     pub title: Option<String>,
     pub slug: Option<String>,
 }
@@ -86,7 +88,8 @@ pub struct TournamentEditData {
 #[patch("{tournament_id}")]
 pub async fn tournaments_modify(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
+    info: web::Path<(String, )>,
+    data: web::Json<TournamentEditRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // let id_or_slug = info.into_inner().0;
     //
@@ -104,19 +107,21 @@ pub async fn tournaments_modify(
 #[delete("{tournament_id}")]
 pub async fn tournaments_delete(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
+    info: web::Path<(String, )>,
 ) -> Result<HttpResponse, ApiError> {
     let id_or_slug = info.into_inner().0;
 
     if id_or_slug.is_empty() {
-        return Ok(HttpResponse::BadRequest().finish());
+        return Err(ApiError::InvalidInput {
+            input: "id_or_slug".to_string(),
+        });
     }
 
     let tournament = repo.osu.delete_tournament(id_or_slug).await;
 
-    if tournament.is_some() {
-        Ok(HttpResponse::NoContent().finish())
-    } else {
-        Ok(HttpResponse::NotFound().finish())
+    if tournament.is_none() {
+        return Err(ApiError::TournamentNotFound);
     }
+
+    Ok(HttpResponse::NoContent().finish())
 }

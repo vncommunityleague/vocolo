@@ -1,7 +1,5 @@
-use crate::models::user::User;
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 pub enum GameMode {
     Standard,
@@ -44,7 +42,7 @@ pub struct OsuTeam {
     pub id: ObjectId,
     pub name: String,
     pub avatar_url: String,
-    pub captain: Option<User>,
+    pub captain: u64,
     /// Contains the osu!user ids
     #[serde(default)]
     pub players: Vec<u64>,
@@ -103,7 +101,6 @@ pub struct OsuTournament {
     // pub created_at: i64,
     //
     // pub updated_at: i64,
-
     /// Human readable id
     pub slug: String,
     /// Tournament title
@@ -124,6 +121,16 @@ pub struct OsuTournament {
 }
 
 impl OsuTournament {
+    pub async fn get_team_position(&self, name: String) -> Option<usize> {
+        for (i, team) in self.teams.iter().enumerate() {
+            if team.name == name {
+                return Some(i);
+            }
+        }
+
+        None
+    }
+
     pub async fn get_team(&self, name: String) -> Option<OsuTeam> {
         for team in &self.teams {
             if team.name == name {
@@ -134,13 +141,13 @@ impl OsuTournament {
         None
     }
 
-    // pub async fn players(&self) -> Vec<User> {
-    //     let mut players = Vec::new();
-    //
-    //     for team in &self.teams {
-    //         players.append(&mut team.players.clone());
-    //     }
-    //
-    //     players
-    // }
+    pub async fn players(&self) -> Vec<u64> {
+        let mut players = Vec::new();
+
+        for team in &self.teams {
+            players.append(&mut team.players.clone());
+        }
+
+        players
+    }
 }

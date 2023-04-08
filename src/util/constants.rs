@@ -1,15 +1,24 @@
 use std::env;
 use std::str::FromStr;
 
-#[derive(strum_macros::Display, strum_macros::EnumProperty)]
+use derive_more::{Display};
+
+#[derive(Display)]
 pub enum Database {
-    #[strum(props(db_name = "vcl"))]
     Main,
-    #[strum(props(db_name = "vcl_osu"))]
     Osu,
 }
 
-#[derive(strum_macros::Display)]
+impl Database {
+    pub fn db_name(&self) -> &str {
+        match *self {
+            Database::Main => "vcl",
+            Database::Osu => "vcl_osu",
+        }
+    }
+}
+
+#[derive(Display)]
 pub enum EnvironmentVariable {
     // Server
     ServerPublicUrl,

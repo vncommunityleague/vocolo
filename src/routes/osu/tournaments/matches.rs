@@ -1,8 +1,9 @@
+use actix_web::{delete, get, HttpResponse, patch, post, web};
+use actix_web::web::{Data, ServiceConfig};
+use serde::{Deserialize, Serialize};
+
 use crate::repository::Repo;
 use crate::routes::ApiError;
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, get, patch, post, web, HttpResponse};
-use serde::{Deserialize, Serialize};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(
