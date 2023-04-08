@@ -1,5 +1,6 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use crate::models::user::StaffUser;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct TeamInfo {
@@ -29,4 +30,6 @@ pub struct TournamentInfo {
 
     // pub registration_start: i64,
     // pub registration_end: i64,
+
+    pub staff: Vec<StaffUser>,
 }
