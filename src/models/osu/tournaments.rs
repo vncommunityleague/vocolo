@@ -1,5 +1,5 @@
 use crate::models::osu::BeatmapMod;
-use crate::models::tournaments::{MatchInfo, TeamInfo, TournamentInfo};
+use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentTeamInfo};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -8,13 +8,7 @@ pub enum TeamFormat {}
 /// An osu!team is represented here
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuTeam {
-    pub info: TeamInfo,
-
-    /// The osu!user id of the team's captain
-    pub captain: u64,
-    /// Contains the osu!user ids
-    #[serde(default)]
-    pub players: Vec<u64>,
+    pub info: TournamentTeamInfo,
 }
 
 /// An osu!map is represented here
@@ -141,11 +135,11 @@ impl OsuTournament {
         None
     }
 
-    pub async fn players(&self) -> Vec<u64> {
+    pub async fn players(&self) -> Vec<String> {
         let mut players = Vec::new();
 
         for team in &self.teams {
-            players.append(&mut team.players.clone());
+            players.append(&mut team.info.players.clone());
         }
 
         players

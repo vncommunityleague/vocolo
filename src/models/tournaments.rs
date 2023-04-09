@@ -9,13 +9,16 @@ pub struct StaffListByRole {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct TeamInfo {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+pub struct TournamentTeamInfo {
     pub name: String,
+
+    pub captain: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar_url: Option<String>,
+
+    #[serde(default)]
+    pub players: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -36,5 +39,6 @@ pub struct TournamentInfo {
 
     // pub registration_start: i64,
     // pub registration_end: i64,
+    #[serde(default)]
     pub staff: Vec<StaffListByRole>,
 }

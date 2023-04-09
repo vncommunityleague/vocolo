@@ -28,7 +28,7 @@ pub async fn players_tournament_get(
     for player in tournament.unwrap().players().await {
         players.push(
             repo.user
-                .find_user_by_osu_id(&player.to_string())
+                .find_user_by_osu_id(&player)
                 .await
                 .unwrap(),
         );
@@ -58,7 +58,7 @@ pub async fn players_team_get(
         return Err(ApiError::TeamNotFound);
     }
 
-    Ok(HttpResponse::Ok().json(team.unwrap().players))
+    Ok(HttpResponse::Ok().json(team.unwrap().info.players))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -89,8 +89,9 @@ pub async fn players_team_add(
     }
 
     tournament.teams[team_pos.unwrap()]
+        .info
         .players
-        .push(data.osu_id);
+        .push(data.osu_id.to_string());
 
     repo.osu
         .replace_tournament(tournament_id, tournament.clone())
