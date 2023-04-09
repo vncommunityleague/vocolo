@@ -3,9 +3,9 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct StaffListByRole {
-    pub role: Role,
-    pub staff: Vec<String>,
+pub struct TournamentStaff {
+    pub id: String,
+    pub roles: Vec<Role>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -40,5 +40,5 @@ pub struct TournamentInfo {
     // pub registration_start: i64,
     // pub registration_end: i64,
     #[serde(default)]
-    pub staff: Vec<StaffListByRole>,
+    pub staff: Vec<TournamentStaff>,
 }

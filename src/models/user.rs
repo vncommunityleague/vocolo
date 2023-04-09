@@ -3,13 +3,27 @@ use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Serialize, Deserialize, Clone)]
 pub enum Role {
-    ADMIN,
-    DEVELOPER,
-    MODERATOR,
-    GFX,
-    REFEREE,
-    CASTER,
-    STREAMER,
+    /// Global roles
+    /// Still can be used in tournaments
+    Admin,
+    Developer,
+    Moderator,
+    Gfx,
+    Referee,
+    Caster,
+    Streamer,
+
+    PlayTester,
+
+    /// Tournament roles
+    Host,
+
+    /// Osu roles
+    Mapper,
+    Mappooler,
+
+    // Others
+    Spreadsheeter,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -24,11 +38,11 @@ pub struct User {
 
 impl User {
     pub async fn is_admin(&self) -> bool {
-        self.roles.contains(&Role::ADMIN) || self.roles.contains(&Role::DEVELOPER)
+        self.roles.contains(&Role::Admin) || self.roles.contains(&Role::Developer)
     }
 
     pub async fn is_moderator(&self) -> bool {
-        self.roles.contains(&Role::MODERATOR) || self.is_admin().await
+        self.roles.contains(&Role::Moderator) || self.is_admin().await
     }
 
     pub async fn has_role(&self, role: Role) -> bool {
