@@ -1,9 +1,9 @@
+use crate::models::osu::tournaments::OsuTournament;
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Document;
 use mongodb::{bson::doc, Client, Collection};
 use tokio_stream::StreamExt;
 
-use crate::models::osu::OsuTournament;
 use crate::util::constants::Database;
 
 // TODO: Handle errors
@@ -16,7 +16,7 @@ pub struct OsuRepo {
 impl OsuRepo {
     pub async fn init(client: &Client) -> Self {
         let db = client.database(Database::Osu.db_name());
-        let tournaments: Collection<OsuTournament> = db.collection("tournaments");
+        let tournaments: Collection<OsuTournament> = db.collection("tournaments.rs");
 
         OsuRepo { tournaments }
     }
@@ -64,7 +64,7 @@ impl OsuRepo {
             .tournaments
             .find(Some(filter), None)
             .await
-            .unwrap_or_else(|_| panic!("Unexpected error while finding tournaments."));
+            .unwrap_or_else(|_| panic!("Unexpected error while finding tournaments.rs."));
 
         cursor.next().await.as_ref()?;
 

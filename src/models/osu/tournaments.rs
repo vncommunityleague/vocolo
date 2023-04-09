@@ -1,39 +1,7 @@
-use derive_more::Display;
-use crate::models::tournament::{MatchInfo, TeamInfo, TournamentInfo};
+use crate::models::osu::BeatmapMod;
+use crate::models::tournaments::{MatchInfo, TeamInfo, TournamentInfo};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum GameMode {
-    Standard,
-    Taiko,
-    Catch,
-    Mania,
-}
-
-#[derive(Display, Serialize, Deserialize, Clone)]
-pub enum BeatmapMod {
-    #[display(fmt = "NoMod")]
-    NM,
-    #[display(fmt = "Hidden")]
-    HD,
-    #[display(fmt = "HardRock")]
-    HR,
-    #[display(fmt = "DoubleTime")]
-    DT,
-    #[display(fmt = "FreeMod")]
-    FM,
-    #[display(fmt = "Easy")]
-    EZ,
-    #[display(fmt = "HalfTime")]
-    HT,
-    #[display(fmt = "Flashlight")]
-    FL,
-    #[display(fmt = "Tiebreaker")]
-    TB,
-}
-
-pub enum ScoreType {}
 
 pub enum TeamFormat {}
 
@@ -70,6 +38,28 @@ pub struct OsuMappool {
     pub name: String,
     /// The osu!mappool's maps
     pub maps: Vec<OsuMap>,
+}
+
+impl OsuMappool {
+    pub async fn get_map_position(&self, osu_beatmap_id: i64) -> Option<usize> {
+        for (i, map) in self.maps.iter().enumerate() {
+            if map.osu_beatmap_id == osu_beatmap_id {
+                return Some(i);
+            }
+        }
+
+        None
+    }
+
+    pub async fn get_map(&self, osu_beatmap_id: i64) -> Option<OsuMap> {
+        for map in &self.maps {
+            if map.osu_beatmap_id == osu_beatmap_id {
+                return Some(map.clone());
+            }
+        }
+
+        None
+    }
 }
 
 // Tournament
@@ -125,6 +115,16 @@ impl OsuTournament {
         for team in &self.teams {
             if team.info.name == name {
                 return Some(team.clone());
+            }
+        }
+
+        None
+    }
+
+    pub async fn get_mappool_position(&self, slug: String) -> Option<usize> {
+        for (i, mappool) in self.mappools.iter().enumerate() {
+            if mappool.slug == slug {
+                return Some(i);
             }
         }
 

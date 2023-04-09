@@ -35,8 +35,3 @@ impl User {
         self.roles.contains(&role) || self.is_moderator().await
     }
 }
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct StaffUser {
-    pub role: Role
-}

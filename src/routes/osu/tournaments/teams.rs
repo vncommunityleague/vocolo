@@ -1,10 +1,10 @@
+use crate::models::osu::tournaments::OsuTeam;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{delete, patch, post, web, HttpResponse};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-use crate::models::osu::OsuTeam;
-use crate::models::tournament::TeamInfo;
+use crate::models::tournaments::TeamInfo;
 use crate::repository::Repo;
 use crate::routes::ApiError;
 

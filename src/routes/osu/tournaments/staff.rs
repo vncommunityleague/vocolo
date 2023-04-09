@@ -1,6 +1,6 @@
-use actix_web::{get, HttpResponse};
-use actix_web::web::ServiceConfig;
 use crate::routes::ApiError;
+use actix_web::web::ServiceConfig;
+use actix_web::{get, HttpResponse};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(get_staff_list);

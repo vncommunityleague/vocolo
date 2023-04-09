@@ -17,7 +17,7 @@ mod teams;
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(
-        web::scope("tournaments")
+        web::scope("tournaments.rs")
             .service(tournaments_get)
             .service(tournaments_list)
             .service(tournaments_create)

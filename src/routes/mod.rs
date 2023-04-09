@@ -25,6 +25,9 @@ pub enum ApiError {
     #[display(fmt = "Mappool not found")]
     MappoolNotFound,
 
+    #[display(fmt = "Map not found")]
+    MapNotFound,
+
     #[display(fmt = "Team not found")]
     TeamNotFound,
 
@@ -44,6 +47,7 @@ impl ResponseError for ApiError {
             ApiError::InvalidInput { .. } => StatusCode::BAD_REQUEST,
             ApiError::TournamentNotFound => StatusCode::NOT_FOUND,
             ApiError::MappoolNotFound => StatusCode::NOT_FOUND,
+            ApiError::MapNotFound => StatusCode::NOT_FOUND,
             ApiError::TeamNotFound => StatusCode::NOT_FOUND,
             ApiError::UserNotFound => StatusCode::NOT_FOUND,
         }
@@ -55,6 +59,7 @@ impl ResponseError for ApiError {
                 ApiError::InvalidInput { .. } => "invalid_input",
                 ApiError::TournamentNotFound => "tournament_not_found",
                 ApiError::MappoolNotFound => "mappool_not_found",
+                ApiError::MapNotFound => "map_not_found",
                 ApiError::TeamNotFound => "team_not_found",
                 ApiError::UserNotFound => "user_not_found",
             },
