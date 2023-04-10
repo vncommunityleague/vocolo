@@ -17,7 +17,11 @@ pub async fn players_tournament_get(
     info: web::Path<(String,)>,
 ) -> Result<HttpResponse, ApiError> {
     let tournament_id = info.into_inner().0;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(&tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(&tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -26,12 +30,7 @@ pub async fn players_tournament_get(
     let mut players = Vec::new();
 
     for player in tournament.unwrap().players().await {
-        players.push(
-            repo.user
-                .find_user_by_osu_id(&player)
-                .await
-                .unwrap(),
-        );
+        players.push(repo.user.find_user_by_osu_id(&player).await.unwrap());
     }
 
     Ok(HttpResponse::Ok().json(players))
@@ -45,7 +44,11 @@ pub async fn players_team_get(
     let path = info.into_inner();
     let tournament_id = &path.0;
     let team_id = &path.1;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -75,7 +78,11 @@ pub async fn players_team_add(
     let path = info.into_inner();
     let tournament_id = &path.0;
     let team_id = &path.1;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -94,6 +101,7 @@ pub async fn players_team_add(
         .push(data.osu_id.to_string());
 
     repo.osu
+        .tournaments
         .replace_tournament(tournament_id, tournament.clone())
         .await;
 

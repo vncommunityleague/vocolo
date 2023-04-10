@@ -1,5 +1,5 @@
 use crate::models::osu::BeatmapMod;
-use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentTeamInfo};
+use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentStaff, TournamentTeamInfo};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
@@ -54,6 +54,11 @@ impl OsuMappool {
 
         None
     }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct OsuMatchMap {
+
 }
 
 // Tournament

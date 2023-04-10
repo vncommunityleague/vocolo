@@ -13,7 +13,7 @@ pub struct UserRepo {
 
 impl UserRepo {
     pub async fn init(client: &Client) -> Self {
-        let db = client.database(Database::Main.db_name());
+        let db = client.database(&Database::Main.to_string());
         let user_col: Collection<User> = db.collection("User");
         UserRepo { user_col }
     }

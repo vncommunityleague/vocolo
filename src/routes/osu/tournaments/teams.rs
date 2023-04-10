@@ -1,8 +1,8 @@
 use crate::models::osu::tournaments::OsuTeam;
+use crate::models::tournaments::TournamentTeamInfo;
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{delete, patch, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::models::tournaments::TournamentTeamInfo;
 
 use crate::repository::Repo;
 use crate::routes::ApiError;
@@ -27,7 +27,11 @@ pub async fn teams_create(
 ) -> Result<HttpResponse, ApiError> {
     let path = info.into_inner();
     let tournament_id = path.0;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(&tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(&tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -42,7 +46,7 @@ pub async fn teams_create(
             avatar_url: None,
 
             players: vec![],
-        }
+        },
     };
 
     if data.avatar_url.is_some() {
@@ -53,6 +57,7 @@ pub async fn teams_create(
 
     let new_tournament = repo
         .osu
+        .tournaments
         .replace_tournament(&tournament_id, tournament)
         .await;
 
@@ -72,7 +77,11 @@ pub async fn teams_modify(
     let tournament_id = &*path.0;
     let team_id = path.1;
 
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Ok(HttpResponse::NotFound().finish());
@@ -96,7 +105,11 @@ pub async fn teams_delete(
     let tournament_id = &*path.0;
     let team_id = path.1;
 
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Ok(HttpResponse::NotFound().finish());
@@ -113,7 +126,10 @@ pub async fn teams_delete(
     }
 
     tournament.teams.remove(index.unwrap());
-    repo.osu.replace_tournament(tournament_id, tournament).await;
+    repo.osu
+        .tournaments
+        .replace_tournament(tournament_id, tournament)
+        .await;
 
     Ok(HttpResponse::NoContent().finish())
 }

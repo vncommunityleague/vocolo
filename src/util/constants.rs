@@ -5,17 +5,10 @@ use derive_more::Display;
 
 #[derive(Display)]
 pub enum Database {
+    #[display(fmt = "vcl")]
     Main,
+    #[display(fmt = "vcl_osu")]
     Osu,
-}
-
-impl Database {
-    pub fn db_name(&self) -> &str {
-        match *self {
-            Database::Main => "vcl",
-            Database::Osu => "vcl_osu",
-        }
-    }
 }
 
 #[derive(Display)]

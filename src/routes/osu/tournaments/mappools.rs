@@ -24,7 +24,11 @@ pub async fn mappools_get(
     let path = info.into_inner();
     let tournament_id = &path.0;
     let mappool_id = &path.1;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -47,7 +51,11 @@ pub async fn mappools_list(
 ) -> Result<HttpResponse, ApiError> {
     let path = info.into_inner();
     let tournament_id = &path.0;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -88,7 +96,11 @@ pub async fn mappools_add_map(
     let path = info.into_inner();
     let tournament_id = &path.0;
     let mappool_id = &path.1;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -109,6 +121,7 @@ pub async fn mappools_add_map(
     });
 
     repo.osu
+        .tournaments
         .replace_tournament(&tournament.info.slug, tournament.clone())
         .await
         .unwrap();
@@ -125,7 +138,11 @@ pub async fn maps_remove_map(
     let tournament_id = &path.0;
     let mappool_id = &path.1;
     let map_id = &path.2;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(tournament_id)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -152,6 +169,7 @@ pub async fn maps_remove_map(
     mappool.maps.remove(map_pos.unwrap());
 
     repo.osu
+        .tournaments
         .replace_tournament(&tournament.info.slug, tournament.clone())
         .await
         .unwrap();

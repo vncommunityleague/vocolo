@@ -1,25 +1,19 @@
-use crate::models::osu::tournaments::{OsuMatch, OsuTournament};
+use crate::models::osu::tournaments::OsuTournament;
 use mongodb::bson::oid::ObjectId;
-use mongodb::bson::Document;
-use mongodb::{bson::doc, Client, Collection};
+use mongodb::bson::{doc, Document};
+use mongodb::{Collection, Database};
 use tokio_stream::StreamExt;
 
-use crate::util::constants::Database;
-
-// TODO: Handle errors
-
 #[derive(Clone)]
-pub struct OsuRepo {
+pub struct OsuTournamentRepo {
     pub tournaments: Collection<OsuTournament>,
 }
 
-impl OsuRepo {
-    pub async fn init(client: &Client) -> Self {
-        let db = client.database(Database::Osu.db_name());
-        let tournaments: Collection<OsuTournament> = db.collection("tournaments");
-        let matches: Collection<OsuMatch> = db.collection("matches");
+impl OsuTournamentRepo {
+    pub(crate) async fn init(database: &Database) -> Self {
+        let tournaments: Collection<OsuTournament> = database.collection("tournaments");
 
-        OsuRepo { tournaments }
+        OsuTournamentRepo { tournaments }
     }
 
     /// Lists all [`OsuTournament`] in the database.

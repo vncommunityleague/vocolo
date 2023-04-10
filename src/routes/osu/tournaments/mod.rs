@@ -25,6 +25,7 @@ pub fn config(cfg: &mut ServiceConfig) {
             .service(tournaments_delete)
             .configure(mappools::config)
             .configure(players::config)
+            .configure(staff::config)
             .configure(teams::config),
     );
 }
@@ -42,7 +43,11 @@ pub async fn tournaments_get(
     info: web::Path<(String,)>,
 ) -> Result<HttpResponse, ApiError> {
     let id_or_slug = info.into_inner().0;
-    let tournament = repo.osu.find_tournament_by_id_or_slug(&id_or_slug).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(&id_or_slug)
+        .await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -54,7 +59,7 @@ pub async fn tournaments_get(
 // TODO: Add SearchConfig
 #[get("")]
 pub async fn tournaments_list(repo: Data<Repo>) -> Result<HttpResponse, ApiError> {
-    let tournaments = repo.osu.list_tournaments().await;
+    let tournaments = repo.osu.tournaments.list_tournaments().await;
 
     if tournaments.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -77,6 +82,7 @@ pub async fn tournaments_create(
     // TODO: Handle duplicate slugs
     let tournament_id = repo
         .osu
+        .tournaments
         .create_tournament(data.slug.clone(), data.title.clone())
         .await;
     Ok(HttpResponse::Ok().json(tournament_id.unwrap()))
@@ -120,7 +126,7 @@ pub async fn tournaments_delete(
         });
     }
 
-    let tournament = repo.osu.delete_tournament(id_or_slug).await;
+    let tournament = repo.osu.tournaments.delete_tournament(id_or_slug).await;
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
