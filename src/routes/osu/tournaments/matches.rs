@@ -3,7 +3,7 @@ use actix_web::{delete, get, patch, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
-use crate::routes::ApiError;
+use crate::routes::{ApiError, ApiResult};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(
@@ -23,12 +23,12 @@ pub struct MatchCreationData {
 }
 
 #[get("{id}")]
-pub async fn matches_get() -> Result<HttpResponse, ApiError> {
+pub async fn matches_get() -> ApiResult {
     todo!();
 }
 
 #[get("")]
-pub async fn matches_list() -> Result<HttpResponse, ApiError> {
+pub async fn matches_list() -> ApiResult {
     todo!();
 }
 
@@ -36,16 +36,16 @@ pub async fn matches_list() -> Result<HttpResponse, ApiError> {
 pub async fn matches_post(
     repo: Data<Repo>,
     data: web::Json<MatchCreationData>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     todo!();
 }
 
 #[patch("{id}")]
-pub async fn matches_patch() -> Result<HttpResponse, ApiError> {
+pub async fn matches_patch() -> ApiResult {
     todo!();
 }
 
 #[delete("{id}")]
-pub async fn matches_delete() -> Result<HttpResponse, ApiError> {
+pub async fn matches_delete() -> ApiResult {
     todo!();
 }

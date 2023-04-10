@@ -5,7 +5,7 @@ use actix_web::{delete, patch, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
-use crate::routes::ApiError;
+use crate::routes::{ApiError, ApiResult};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(teams_create);
@@ -24,7 +24,7 @@ pub async fn teams_create(
     repo: Data<Repo>,
     info: web::Path<(String,)>,
     data: web::Json<TeamCreateRequest>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = path.0;
     let tournament = repo
@@ -32,6 +32,12 @@ pub async fn teams_create(
         .tournaments
         .find_tournament_by_id_or_slug(&tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -61,8 +67,8 @@ pub async fn teams_create(
         .replace_tournament(&tournament_id, tournament)
         .await;
 
-    if new_tournament.is_some() {
-        Ok(HttpResponse::Ok().json(new_tournament.unwrap()))
+    if new_tournament.is_ok() {
+        Ok(HttpResponse::Ok().json(new_tournament.unwrap().unwrap()))
     } else {
         Ok(HttpResponse::NotFound().finish())
     }
@@ -72,16 +78,21 @@ pub async fn teams_create(
 pub async fn teams_modify(
     repo: Data<Repo>,
     info: web::Path<(String, String)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &*path.0;
     let team_id = path.1;
-
     let tournament = repo
         .osu
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Ok(HttpResponse::NotFound().finish());
@@ -90,7 +101,7 @@ pub async fn teams_modify(
     let team = tournament.unwrap().get_team(team_id).await;
 
     if team.is_none() {
-        return Err(ApiError::TeamNotFound);
+        return Err(ApiError::TournamentTeamNotFound);
     }
 
     Ok(HttpResponse::Ok().json(team))
@@ -100,16 +111,21 @@ pub async fn teams_modify(
 pub async fn teams_delete(
     repo: Data<Repo>,
     info: web::Path<(String, String)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &*path.0;
     let team_id = path.1;
-
     let tournament = repo
         .osu
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Ok(HttpResponse::NotFound().finish());
@@ -122,7 +138,7 @@ pub async fn teams_delete(
         .position(|x| x.info.name.eq(&team_id));
 
     if index.is_none() {
-        return Err(ApiError::TeamNotFound);
+        return Err(ApiError::TournamentTeamNotFound);
     }
 
     tournament.teams.remove(index.unwrap());

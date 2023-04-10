@@ -1,7 +1,7 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Serialize, Deserialize, Clone, Copy)]
+#[derive(PartialEq, Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Role {
     /// Global roles
     /// Still can be used in tournaments

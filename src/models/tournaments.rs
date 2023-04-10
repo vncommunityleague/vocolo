@@ -2,13 +2,13 @@ use crate::models::user::Role;
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TournamentStaff {
     pub id: String,
     pub roles: Vec<Role>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TournamentTeamInfo {
     pub name: String,
 
@@ -27,7 +27,7 @@ pub struct MatchInfo {
     pub id: Option<ObjectId>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TournamentInfo {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,

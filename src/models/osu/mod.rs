@@ -12,7 +12,7 @@ pub enum GameMode {
     Mania,
 }
 
-#[derive(Display, Serialize, Deserialize, Clone)]
+#[derive(Display, Serialize, Deserialize, Clone, Debug)]
 pub enum BeatmapMod {
     #[display(fmt = "NoMod")]
     NM,

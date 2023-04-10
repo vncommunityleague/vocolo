@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 pub enum TeamFormat {}
 
 /// An osu!team is represented here
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuTeam {
     pub info: TournamentTeamInfo,
 }
 
 /// An osu!map is represented here
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMap {
     /// The osu!map's id
     pub osu_beatmap_id: i64,
@@ -21,7 +21,7 @@ pub struct OsuMap {
 }
 
 /// An osu!mappool is represented here
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMappool {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
@@ -57,9 +57,7 @@ impl OsuMappool {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct OsuMatchMap {
-
-}
+pub struct OsuMatchMap {}
 
 // Tournament
 #[derive(Serialize, Deserialize, Clone)]
@@ -82,7 +80,7 @@ pub struct OsuTournamentStage {
     pub matches: Vec<OsuMatch>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuTournament {
     #[serde(flatten)]
     pub info: TournamentInfo,
@@ -99,6 +97,7 @@ pub struct OsuTournament {
     pub current_stage: Option<ObjectId>,
 }
 
+// TODO: replace with custom serializer and deserializer, ig
 impl OsuTournament {
     pub async fn get_team_position(&self, name: String) -> Option<usize> {
         for (i, team) in self.teams.iter().enumerate() {

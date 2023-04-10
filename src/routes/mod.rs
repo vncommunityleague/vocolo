@@ -3,36 +3,36 @@ use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, ResponseError};
 use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
+use crate::repository::RepoError;
 
 mod auth;
 mod osu;
 mod users;
 
-pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("authorize").configure(auth::config));
-    cfg.service(web::scope("osu").configure(osu::config));
-    cfg.service(web::scope("users").configure(users::config));
-}
+pub type ApiResult = Result<HttpResponse, ApiError>;
 
 #[derive(Debug, Display, Error)]
 pub enum ApiError {
-    #[display(fmt = "Invalid input: {}", input)]
-    InvalidInput { input: String },
+    #[display(fmt = "duplicate key: {}", key)]
+    Duplicate { key: String },
 
-    #[display(fmt = "Tournament not found")]
+    #[display(fmt = "internal server error: {}", message)]
+    InternalServerError { message: String },
+
+    #[display(fmt = "user not found")]
+    UserNotFound,
+
+    #[display(fmt = "tournament not found")]
     TournamentNotFound,
 
-    #[display(fmt = "Mappool not found")]
-    MappoolNotFound,
+    #[display(fmt = "tournament team not found")]
+    TournamentTeamNotFound,
 
-    #[display(fmt = "Map not found")]
+    #[display(fmt = "map not found")]
     MapNotFound,
 
-    #[display(fmt = "Team not found")]
-    TeamNotFound,
-
-    #[display(fmt = "User not found")]
-    UserNotFound,
+    #[display(fmt = "mappool not found")]
+    MappoolNotFound,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -41,29 +41,47 @@ struct ApiErrorWrapper<'a> {
     description: &'a str,
 }
 
+impl ApiError {
+    pub fn from_repo_error(error: RepoError) -> Self {
+        match error {
+            RepoError::AlreadyExist { key } => ApiError::Duplicate { key },
+            RepoError::QueryFatal { message } => ApiError::InternalServerError { message },
+        }
+    }
+}
+
 impl ResponseError for ApiError {
     fn status_code(&self) -> StatusCode {
         match *self {
-            ApiError::InvalidInput { .. } => StatusCode::BAD_REQUEST,
-            ApiError::TournamentNotFound => StatusCode::NOT_FOUND,
-            ApiError::MappoolNotFound => StatusCode::NOT_FOUND,
-            ApiError::MapNotFound => StatusCode::NOT_FOUND,
-            ApiError::TeamNotFound => StatusCode::NOT_FOUND,
-            ApiError::UserNotFound => StatusCode::NOT_FOUND,
+            ApiError::Duplicate { .. } => StatusCode::BAD_REQUEST,
+            ApiError::InternalServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::UserNotFound |
+            ApiError::TournamentNotFound |
+            ApiError::TournamentTeamNotFound |
+            ApiError::MapNotFound |
+            ApiError::MappoolNotFound
+            => StatusCode::NOT_FOUND,
         }
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
         HttpResponse::build(self.status_code()).json(ApiErrorWrapper {
-            error: match *self {
-                ApiError::InvalidInput { .. } => "invalid_input",
-                ApiError::TournamentNotFound => "tournament_not_found",
-                ApiError::MappoolNotFound => "mappool_not_found",
-                ApiError::MapNotFound => "map_not_found",
-                ApiError::TeamNotFound => "team_not_found",
+            error: match self {
+                ApiError::Duplicate { .. } => "duplicate",
+                ApiError::InternalServerError { .. } => "internal_server_error",
                 ApiError::UserNotFound => "user_not_found",
+                ApiError::TournamentNotFound => "tournament_not_found",
+                ApiError::TournamentTeamNotFound => "tournament_team_not_found",
+                ApiError::MapNotFound => "map_not_found",
+                ApiError::MappoolNotFound => "mappool_not_found",
             },
             description: &self.to_string(),
         })
     }
+}
+
+pub fn init(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::scope("authorize").configure(auth::config));
+    cfg.service(web::scope("osu").configure(osu::config));
+    cfg.service(web::scope("users").configure(users::config));
 }

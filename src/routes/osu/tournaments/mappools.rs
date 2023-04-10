@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use crate::repository::Repo;
-use crate::routes::ApiError;
+use crate::routes::{ApiError, ApiResult};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(mappools_get);
     cfg.service(mappools_list);
-    cfg.service(mappools_post);
+    cfg.service(mappools_create);
     cfg.service(mappools_modify);
     cfg.service(mappools_delete);
 }
@@ -20,7 +20,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 pub async fn mappools_get(
     repo: Data<Repo>,
     info: web::Path<(String, String)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let mappool_id = &path.1;
@@ -29,6 +29,12 @@ pub async fn mappools_get(
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::from_repo_error(tournament.err().unwrap()));
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -48,7 +54,7 @@ pub async fn mappools_get(
 pub async fn mappools_list(
     repo: Data<Repo>,
     info: web::Path<(String,)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let tournament = repo
@@ -56,6 +62,12 @@ pub async fn mappools_list(
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::from_repo_error(tournament.err().unwrap()));
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -67,17 +79,17 @@ pub async fn mappools_list(
 }
 
 #[post("{tournament_id}/mappools")]
-pub async fn mappools_post() -> Result<HttpResponse, ApiError> {
+pub async fn mappools_create() -> ApiResult {
     todo!();
 }
 
 #[patch("{tournament_id}/mappools/{mappool_id}")]
-pub async fn mappools_modify() -> Result<HttpResponse, ApiError> {
+pub async fn mappools_modify() -> ApiResult {
     todo!();
 }
 
 #[delete("{tournament_id}/mappools/{mappool_id}")]
-pub async fn mappools_delete() -> Result<HttpResponse, ApiError> {
+pub async fn mappools_delete() -> ApiResult {
     todo!();
 }
 
@@ -92,7 +104,7 @@ pub async fn mappools_add_map(
     repo: Data<Repo>,
     info: web::Path<(String, String)>,
     data: web::Json<AddMapRequest>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let mappool_id = &path.1;
@@ -101,6 +113,12 @@ pub async fn mappools_add_map(
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -133,7 +151,7 @@ pub async fn mappools_add_map(
 pub async fn maps_remove_map(
     repo: Data<Repo>,
     info: web::Path<(String, String, String)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let mappool_id = &path.1;
@@ -143,6 +161,12 @@ pub async fn maps_remove_map(
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);

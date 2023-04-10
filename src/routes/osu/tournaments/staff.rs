@@ -1,10 +1,10 @@
-use crate::routes::ApiError;
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, HttpResponse, patch, post, web};
-use serde::{Deserialize, Serialize};
 use crate::models::tournaments::TournamentStaff;
 use crate::models::user::Role;
 use crate::repository::Repo;
+use crate::routes::{ApiError, ApiResult};
+use actix_web::web::{Data, ServiceConfig};
+use actix_web::{delete, patch, post, web, HttpResponse};
+use serde::{Deserialize, Serialize};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(staff_add);
@@ -15,7 +15,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AddStaffRequest {
     pub id: String,
-    pub roles: Option<Role>
+    pub roles: Option<Role>,
 }
 
 #[post("{tournament_id}/staff")]
@@ -23,13 +23,19 @@ pub async fn staff_add(
     repo: Data<Repo>,
     info: web::Path<(String,)>,
     data: web::Json<AddStaffRequest>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let tournament_id = info.into_inner().0;
     let tournament = repo
         .osu
         .tournaments
         .find_tournament_by_id_or_slug(&tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -47,7 +53,7 @@ pub async fn staff_add(
 
     tournament.info.staff.push(TournamentStaff {
         id: user.osu_id,
-        roles: vec![roles]
+        roles: vec![roles],
     });
 
     Ok(HttpResponse::Ok().finish())
@@ -55,7 +61,7 @@ pub async fn staff_add(
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EditStaffRequest {
-    pub roles: Option<Role>
+    pub roles: Option<Role>,
 }
 
 #[patch("{tournament_id}/staff/{user_id}")]
@@ -63,7 +69,7 @@ pub async fn staff_modify(
     repo: Data<Repo>,
     info: web::Path<(String, String)>,
     data: web::Json<EditStaffRequest>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let user_id = &path.1;
@@ -72,6 +78,12 @@ pub async fn staff_modify(
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
@@ -100,7 +112,7 @@ pub async fn staff_modify(
 pub async fn staff_delete(
     repo: Data<Repo>,
     info: web::Path<(String, String)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let user_id = &path.1;
@@ -109,6 +121,12 @@ pub async fn staff_delete(
         .tournaments
         .find_tournament_by_id_or_slug(tournament_id)
         .await;
+
+    if tournament.is_err() {
+        return Err(ApiError::TournamentNotFound);
+    }
+
+    let tournament = tournament.unwrap();
 
     if tournament.is_none() {
         return Err(ApiError::TournamentNotFound);
