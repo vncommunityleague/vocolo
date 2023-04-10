@@ -1,9 +1,9 @@
+use crate::repository::RepoError;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, ResponseError};
 use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
-use crate::repository::RepoError;
 
 mod auth;
 mod osu;
@@ -55,12 +55,11 @@ impl ResponseError for ApiError {
         match *self {
             ApiError::Duplicate { .. } => StatusCode::BAD_REQUEST,
             ApiError::InternalServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            ApiError::UserNotFound |
-            ApiError::TournamentNotFound |
-            ApiError::TournamentTeamNotFound |
-            ApiError::MapNotFound |
-            ApiError::MappoolNotFound
-            => StatusCode::NOT_FOUND,
+            ApiError::UserNotFound
+            | ApiError::TournamentNotFound
+            | ApiError::TournamentTeamNotFound
+            | ApiError::MapNotFound
+            | ApiError::MappoolNotFound => StatusCode::NOT_FOUND,
         }
     }
 

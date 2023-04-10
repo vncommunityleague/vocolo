@@ -51,10 +51,7 @@ impl OsuTournamentRepo {
 
     /// Finds the [`OsuTournament`] that matches the id or slug.
     pub async fn find_tournament(&self, filter: Document) -> RepoResult<OsuTournament> {
-        let tournament = self
-            .tournaments
-            .find_one(Some(filter), None)
-            .await;
+        let tournament = self.tournaments.find_one(Some(filter), None).await;
 
         if tournament.is_err() {
             return Err(RepoError::QueryFatal {
@@ -67,10 +64,7 @@ impl OsuTournamentRepo {
 
     /// Finds and returns all [`OsuTournament`] that match the filter.
     pub async fn find_tournaments(&self, filter: Document) -> RepoResult<Vec<OsuTournament>> {
-        let cursor = self
-            .tournaments
-            .find(Some(filter), None)
-            .await;
+        let cursor = self.tournaments.find(Some(filter), None).await;
 
         if cursor.is_err() {
             return Err(RepoError::QueryFatal {

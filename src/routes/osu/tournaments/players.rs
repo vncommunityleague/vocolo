@@ -12,10 +12,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 }
 
 #[get("{tournament_id}/players")]
-pub async fn players_tournament_get(
-    repo: Data<Repo>,
-    info: web::Path<(String,)>,
-) -> ApiResult {
+pub async fn players_tournament_get(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
     let tournament_id = info.into_inner().0;
     let tournament = repo
         .osu
@@ -43,10 +40,7 @@ pub async fn players_tournament_get(
 }
 
 #[get("{tournament_id}/teams/{team_id}/players")]
-pub async fn players_team_get(
-    repo: Data<Repo>,
-    info: web::Path<(String, String)>,
-) -> ApiResult {
+pub async fn players_team_get(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let team_id = &path.1;

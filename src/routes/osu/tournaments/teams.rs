@@ -75,10 +75,7 @@ pub async fn teams_create(
 }
 
 #[patch("{tournament_id}/teams/{team_id}")]
-pub async fn teams_modify(
-    repo: Data<Repo>,
-    info: web::Path<(String, String)>,
-) -> ApiResult {
+pub async fn teams_modify(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &*path.0;
     let team_id = path.1;
@@ -108,10 +105,7 @@ pub async fn teams_modify(
 }
 
 #[delete("{tournament_id}/teams/{team_id}")]
-pub async fn teams_delete(
-    repo: Data<Repo>,
-    info: web::Path<(String, String)>,
-) -> ApiResult {
+pub async fn teams_delete(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &*path.0;
     let team_id = path.1;

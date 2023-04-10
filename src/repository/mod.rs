@@ -12,7 +12,7 @@ pub type RepoResult<T> = Result<Option<T>, RepoError>;
 pub enum RepoError {
     #[display(fmt = "{} is already existed.", key)]
     AlreadyExist { key: String },
-    
+
     #[display(fmt = "Failed to query: {}", message)]
     QueryFatal { message: String },
 }

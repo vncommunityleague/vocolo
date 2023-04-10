@@ -17,10 +17,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 }
 
 #[get("{tournament_id}/mappools/{mappool_id}")]
-pub async fn mappools_get(
-    repo: Data<Repo>,
-    info: web::Path<(String, String)>,
-) -> ApiResult {
+pub async fn mappools_get(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let mappool_id = &path.1;
@@ -51,10 +48,7 @@ pub async fn mappools_get(
 }
 
 #[get("{tournament_id}/mappools")]
-pub async fn mappools_list(
-    repo: Data<Repo>,
-    info: web::Path<(String,)>,
-) -> ApiResult {
+pub async fn mappools_list(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let tournament = repo

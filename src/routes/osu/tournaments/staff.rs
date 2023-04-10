@@ -109,10 +109,7 @@ pub async fn staff_modify(
 }
 
 #[delete("{tournament_id}/staff/{user_id}")]
-pub async fn staff_delete(
-    repo: Data<Repo>,
-    info: web::Path<(String, String)>,
-) -> ApiResult {
+pub async fn staff_delete(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let user_id = &path.1;

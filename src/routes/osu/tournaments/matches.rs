@@ -33,10 +33,7 @@ pub async fn matches_list() -> ApiResult {
 }
 
 #[post("")]
-pub async fn matches_post(
-    repo: Data<Repo>,
-    data: web::Json<MatchCreationData>,
-) -> ApiResult {
+pub async fn matches_post(repo: Data<Repo>, data: web::Json<MatchCreationData>) -> ApiResult {
     todo!();
 }
 

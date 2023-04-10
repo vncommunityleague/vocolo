@@ -38,10 +38,7 @@ struct OsuTournamentResponse {
 }
 
 #[get("{tournament_id}")]
-pub async fn tournaments_get(
-    repo: Data<Repo>,
-    info: web::Path<(String,)>,
-) -> ApiResult {
+pub async fn tournaments_get(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
     let path = info.into_inner();
     let id_or_slug = &path.0;
 
@@ -132,10 +129,7 @@ pub async fn tournaments_modify(
 }
 
 #[delete("{tournament_id}")]
-pub async fn tournaments_delete(
-    repo: Data<Repo>,
-    info: web::Path<(String,)>,
-) -> ApiResult {
+pub async fn tournaments_delete(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
     let path = info.into_inner();
     let id_or_slug = &path.0;
 
