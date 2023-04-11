@@ -97,42 +97,21 @@ pub struct OsuTournament {
     pub current_stage: Option<ObjectId>,
 }
 
-// TODO: replace with custom serializer and deserializer, ig
 impl OsuTournament {
-    pub async fn get_team_position(&self, name: String) -> Option<usize> {
+    pub async fn get_team(&self, name: String) -> Option<(usize, OsuTeam)> {
         for (i, team) in self.teams.iter().enumerate() {
             if team.info.name == name {
-                return Some(i);
+                return Some((i, team.clone()));
             }
         }
 
         None
     }
 
-    pub async fn get_team(&self, name: String) -> Option<OsuTeam> {
-        for team in &self.teams {
-            if team.info.name == name {
-                return Some(team.clone());
-            }
-        }
-
-        None
-    }
-
-    pub async fn get_mappool_position(&self, slug: String) -> Option<usize> {
+    pub async fn get_mappool(&self, slug: String) -> Option<(usize, OsuMappool)> {
         for (i, mappool) in self.mappools.iter().enumerate() {
             if mappool.slug == slug {
-                return Some(i);
-            }
-        }
-
-        None
-    }
-
-    pub async fn get_mappool(&self, slug: String) -> Option<OsuMappool> {
-        for mappool in &self.mappools {
-            if mappool.slug == slug {
-                return Some(mappool.clone());
+                return Some((i, mappool.clone()));
             }
         }
 

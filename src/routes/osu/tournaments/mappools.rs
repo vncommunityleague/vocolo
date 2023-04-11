@@ -44,7 +44,7 @@ pub async fn mappools_get(repo: Data<Repo>, info: web::Path<(String, String)>) -
         return Err(ApiError::MappoolNotFound);
     }
 
-    Ok(HttpResponse::Ok().json(mappool.unwrap()))
+    Ok(HttpResponse::Ok().json(mappool.unwrap().1))
 }
 
 #[get("{tournament_id}/mappools")]
@@ -119,15 +119,18 @@ pub async fn mappools_add_map(
     }
 
     let mut tournament = tournament.unwrap();
-    let mappool_pos = tournament
-        .get_mappool_position(mappool_id.to_string())
+    let mappool = tournament
+        .get_mappool(mappool_id.to_string())
         .await;
 
-    if mappool_pos.is_none() {
+    if mappool.is_none() {
         return Err(ApiError::MappoolNotFound);
     }
 
-    tournament.mappools[mappool_pos.unwrap()].maps.push(OsuMap {
+    let mappool = mappool.unwrap();
+    let mappool_pos = mappool.0;
+
+    tournament.mappools[mappool_pos].maps.push(OsuMap {
         osu_beatmap_id: data.map_id.parse::<i64>().unwrap(),
         modifier: BeatmapMod::from_str(&data.modifier).unwrap(),
     });
@@ -168,14 +171,14 @@ pub async fn maps_remove_map(
 
     let mut tournament = tournament.unwrap();
     let mappool_pos = tournament
-        .get_mappool_position(mappool_id.to_string())
+        .get_mappool(mappool_id.to_string())
         .await;
 
     if mappool_pos.is_none() {
         return Err(ApiError::MappoolNotFound);
     }
 
-    let mappool = &mut tournament.mappools[mappool_pos.unwrap()];
+    let mappool = &mut tournament.mappools[mappool_pos.unwrap().0];
     let map_pos = mappool
         .get_map_position(map_id.parse::<i64>().unwrap())
         .await;

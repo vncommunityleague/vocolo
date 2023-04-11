@@ -67,7 +67,9 @@ pub async fn players_team_get(repo: Data<Repo>, info: web::Path<(String, String)
         return Err(ApiError::TournamentTeamNotFound);
     }
 
-    Ok(HttpResponse::Ok().json(team.unwrap().info.players))
+    let team = team.unwrap().1;
+
+    Ok(HttpResponse::Ok().json(team.info.players))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -101,13 +103,16 @@ pub async fn players_team_add(
     }
 
     let tournament = &mut tournament.unwrap();
-    let team_pos = tournament.get_team_position(team_id.to_string()).await;
+    let team = tournament.get_team(team_id.to_string()).await;
 
-    if team_pos.is_none() {
+    if team.is_none() {
         return Err(ApiError::TournamentTeamNotFound);
     }
 
-    tournament.teams[team_pos.unwrap()]
+    let team = team.unwrap();
+    let team_pos = team.0;
+
+    tournament.teams[team_pos]
         .info
         .players
         .push(data.osu_id.to_string());
