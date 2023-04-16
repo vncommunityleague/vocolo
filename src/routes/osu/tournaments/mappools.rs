@@ -119,9 +119,7 @@ pub async fn mappools_add_map(
     }
 
     let mut tournament = tournament.unwrap();
-    let mappool = tournament
-        .get_mappool(mappool_id.to_string())
-        .await;
+    let mappool = tournament.get_mappool(mappool_id.to_string()).await;
 
     if mappool.is_none() {
         return Err(ApiError::MappoolNotFound);
@@ -170,9 +168,7 @@ pub async fn maps_remove_map(
     }
 
     let mut tournament = tournament.unwrap();
-    let mappool_pos = tournament
-        .get_mappool(mappool_id.to_string())
-        .await;
+    let mappool_pos = tournament.get_mappool(mappool_id.to_string()).await;
 
     if mappool_pos.is_none() {
         return Err(ApiError::MappoolNotFound);
