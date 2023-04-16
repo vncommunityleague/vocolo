@@ -102,8 +102,7 @@ impl OsuTournamentRepo {
 
         let query_result = self
             .tournaments
-            .clone_with_type::<Document>()
-            // TODO: Using model instead of document
+            .clone_with_type()
             .insert_one(
                 doc! {
                     "slug": slug,
