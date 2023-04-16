@@ -123,7 +123,6 @@ impl OsuTournamentRepo {
         Ok(query_result.inserted_id.as_object_id().unwrap())
     }
 
-    // TODO: Ameliorate this
     pub async fn replace_tournament(
         &self,
         id_or_slug: &str,
