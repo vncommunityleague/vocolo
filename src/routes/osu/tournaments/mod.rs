@@ -2,7 +2,7 @@ use actix_web::{
     web::{Data, ServiceConfig},
     {delete, get, patch, post, web, HttpResponse},
 };
-use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
@@ -115,17 +115,31 @@ pub async fn tournaments_modify(
     info: web::Path<(String,)>,
     data: web::Json<TournamentEditRequest>,
 ) -> ApiResult {
-    // let id_or_slug = info.into_inner().0;
-    //
-    // let tournament = repo.osu.(id_or_slug).await;
-    //
-    // if tournament.is_some() {
-    //     Ok(HttpResponse::NoContent().finish())
-    // } else {
-    //     Ok(HttpResponse::NotFound().finish())
-    // }
+    let id_or_slug = info.into_inner().0;
+    let tournament = repo
+        .osu
+        .tournaments
+        .find_tournament_by_id_or_slug(&id_or_slug)
+        .await
+        .unwrap();
 
-    todo!()
+    if tournament.is_some() {
+        let mut tournament = tournament.unwrap();
+        if let Some(t) = &data.title {
+            tournament.info.title = t.to_string();
+        }
+        if let Some(s) = &data.slug {
+            tournament.info.slug = s.to_string();
+        }
+        repo.osu
+            .tournaments
+            .replace_tournament(&id_or_slug, tournament)
+            .await
+            .unwrap();
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Ok(HttpResponse::NotFound().finish())
+    }
 }
 
 #[delete("{tournament_id}")]
