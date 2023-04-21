@@ -136,7 +136,7 @@ pub async fn tournaments_modify(
             .replace_tournament(&id_or_slug, tournament)
             .await
             .unwrap();
-        Ok(HttpResponse::NoContent().finish())
+        Ok(HttpResponse::Ok().finish())
     } else {
         Ok(HttpResponse::NotFound().finish())
     }
