@@ -102,8 +102,7 @@ impl OsuTournamentRepo {
 
         let query_result = self
             .tournaments
-            .clone_with_type::<Document>()
-            // TODO: Using model instead of document
+            .clone_with_type()
             .insert_one(
                 doc! {
                     "slug": slug,
@@ -124,7 +123,6 @@ impl OsuTournamentRepo {
         Ok(query_result.inserted_id.as_object_id().unwrap())
     }
 
-    // TODO: Ameliorate this
     pub async fn replace_tournament(
         &self,
         id_or_slug: &str,
