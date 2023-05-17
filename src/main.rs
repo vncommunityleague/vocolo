@@ -1,5 +1,6 @@
-use actix_web::{web, App, HttpServer};
-
+use std::net::SocketAddr;
+use axum::Router;
+use reqwest::get;
 use util::constants::EnvironmentVariable;
 
 use crate::repository::Repo;
@@ -10,19 +11,20 @@ mod routes;
 pub mod models;
 mod util;
 
-#[actix_rt::main]
-async fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() {
     dotenvy::dotenv().ok();
 
     let repo = Repo::init().await;
 
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(repo.clone()))
-            .service(web::resource("/").to(|| async { "{ message: \"hoaq vu to\" }" }))
-            .configure(routes::init)
-    })
-    .bind(EnvironmentVariable::ServerHost.value())?
-    .run()
-    .await
+    let app = Router::new()
+        .route("/", get(|| async { "{ message: \"hoaq vu to\" }" }))
+        .with_state(repo)
+        ;
+
+    routes::init(&app).await;
+    axum::Server::bind(&SocketAddr::from(EnvironmentVariable::ServerHost.unwrap()))
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }

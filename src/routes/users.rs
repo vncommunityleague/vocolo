@@ -1,15 +1,18 @@
+use axum::Router;
+use axum::routing::get;
 use crate::repository::Repo;
-use crate::routes::ApiError;
+use crate::routes::{ApiError, ApiResult};
 use actix_web::web::{Data, ServiceConfig};
 use actix_web::{get, web, HttpResponse};
+use crate::models::user::User;
 
-pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(get_current_user);
-    cfg.service(get_user);
+pub fn config(router: &Router) {
+    router.route("/me", get(get_current_user));
+    router.route("/{id}", get(get_user));
 }
 
 #[get("/me")]
-pub async fn get_current_user() -> Result<HttpResponse, ApiError> {
+pub async fn get_current_user() -> ApiResult<User> {
     todo!()
 }
 
@@ -17,7 +20,7 @@ pub async fn get_current_user() -> Result<HttpResponse, ApiError> {
 pub async fn get_user(
     repo: Data<Repo>,
     info: web::Path<(String,)>,
-) -> Result<HttpResponse, ApiError> {
+) -> ApiResult<User> {
     let path = info.into_inner();
     let id = &path.0;
 

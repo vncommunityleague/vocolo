@@ -1,7 +1,7 @@
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Router;
 use crate::repository::RepoError;
-use actix_web::body::BoxBody;
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, ResponseError};
 use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +9,7 @@ mod auth;
 mod osu;
 mod users;
 
-pub type ApiResult = Result<HttpResponse, ApiError>;
+pub type ApiResult<T> = Result<T, ApiError>;
 
 #[derive(Debug, Display, Error)]
 pub enum ApiError {
@@ -50,36 +50,28 @@ impl ApiError {
     }
 }
 
-impl ResponseError for ApiError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            ApiError::Duplicate { .. } => StatusCode::BAD_REQUEST,
-            ApiError::InternalServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            ApiError::UserNotFound
-            | ApiError::TournamentNotFound
-            | ApiError::TournamentTeamNotFound
-            | ApiError::MapNotFound
-            | ApiError::MappoolNotFound => StatusCode::NOT_FOUND,
-        }
-    }
+impl IntoResponse for ApiError {
+    fn into_response(self) -> Response {
+        let (status_code, error_message) = match self {
+            ApiError::Duplicate { .. } => (StatusCode::BAD_REQUEST, "duplicate"),
+            ApiError::InternalServerError { .. } => (StatusCode::INTERNAL_SERVER_ERROR, "internal_server_error"),
+            ApiError::UserNotFound => (StatusCode::NOT_FOUND, "user_not_found"),
+            ApiError::TournamentNotFound => (StatusCode::NOT_FOUND, "tournament_not_found"),
+            ApiError::TournamentTeamNotFound => (StatusCode::NOT_FOUND, "tournament_team_not_found"),
+            ApiError::MapNotFound => (StatusCode::NOT_FOUND, "map_not_found"),
+            ApiError::MappoolNotFound => (StatusCode::NOT_FOUND, "mappool_not_found"),
+        };
 
-    fn error_response(&self) -> HttpResponse<BoxBody> {
-        HttpResponse::build(self.status_code()).json(ApiErrorWrapper {
-            error: match self {
-                ApiError::Duplicate { .. } => "duplicate",
-                ApiError::InternalServerError { .. } => "internal_server_error",
-                ApiError::UserNotFound => "user_not_found",
-                ApiError::TournamentNotFound => "tournament_not_found",
-                ApiError::TournamentTeamNotFound => "tournament_team_not_found",
-                ApiError::MapNotFound => "map_not_found",
-                ApiError::MappoolNotFound => "mappool_not_found",
-            },
+        let body = ApiErrorWrapper {
+            error: error_message,
             description: &self.to_string(),
-        })
+        };
+
+        (status_code, body).into_response()
     }
 }
 
-pub fn init(cfg: &mut web::ServiceConfig) {
+pub fn init(router: &Router) {
     cfg.service(web::scope("authorize").configure(auth::config));
     cfg.service(web::scope("osu").configure(osu::config));
     cfg.service(web::scope("users").configure(users::config));
