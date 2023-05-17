@@ -12,6 +12,8 @@ pub enum Role {
     Referee,
     Caster,
     Streamer,
+    Spreadsheeter,
+
     Member,
 
     PlayTester,
@@ -24,7 +26,6 @@ pub enum Role {
     Mappooler,
 
     // Others
-    Spreadsheeter,
 }
 
 impl Default for Role {
