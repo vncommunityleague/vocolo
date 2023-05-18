@@ -2,8 +2,12 @@ use crate::models::tournaments::TournamentStaff;
 use crate::models::user::Role;
 use crate::repository::Repo;
 use crate::routes::{ApiError, ApiResult};
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, patch, post, web, HttpResponse};
+use axum::Router;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 
 pub fn config(cfg: &mut ServiceConfig) {

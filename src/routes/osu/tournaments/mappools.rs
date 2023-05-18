@@ -1,22 +1,23 @@
 use crate::models::osu::tournaments::OsuMap;
 use crate::models::osu::BeatmapMod;
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, get, patch, post, web, HttpResponse};
+use axum::Router;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use crate::repository::Repo;
 use crate::routes::{ApiError, ApiResult};
 
-pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(mappools_get);
-    cfg.service(mappools_list);
-    cfg.service(mappools_create);
-    cfg.service(mappools_modify);
-    cfg.service(mappools_delete);
+pub fn init_routes() -> Router {
+    Router::new()
+        .route("", get(mappools_list).post(mappools_create))
+        .route("/:mappool_id", get(mappools_get).patch(mappools_modify).delete(mappools_delete))
 }
 
-#[get("{tournament_id}/mappools/{mappool_id}")]
 pub async fn mappools_get(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
@@ -47,7 +48,6 @@ pub async fn mappools_get(repo: Data<Repo>, info: web::Path<(String, String)>) -
     Ok(HttpResponse::Ok().json(mappool.unwrap().1))
 }
 
-#[get("{tournament_id}/mappools")]
 pub async fn mappools_list(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
@@ -72,12 +72,10 @@ pub async fn mappools_list(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiR
     Ok(HttpResponse::Ok().json(tournament.mappools))
 }
 
-#[post("{tournament_id}/mappools")]
 pub async fn mappools_create() -> ApiResult {
     todo!();
 }
 
-#[patch("{tournament_id}/mappools/{mappool_id}")]
 pub async fn mappools_modify() -> ApiResult {
     todo!();
 }

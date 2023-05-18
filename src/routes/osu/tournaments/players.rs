@@ -1,5 +1,9 @@
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{get, post, web, HttpResponse};
+use axum::Router;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
@@ -9,6 +13,11 @@ pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(players_tournament_get);
     cfg.service(players_team_get);
     cfg.service(players_team_add);
+}
+
+pub fn init_routes() -> Router {
+    Router::new()
+        .route("", get(players_tournament_get))
 }
 
 #[get("{tournament_id}/players")]

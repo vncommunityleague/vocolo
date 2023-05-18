@@ -1,7 +1,11 @@
 use crate::models::osu::tournaments::OsuTeam;
 use crate::models::tournaments::TournamentTeamInfo;
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, patch, post, web, HttpResponse};
+use axum::Router;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;

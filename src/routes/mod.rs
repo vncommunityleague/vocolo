@@ -71,8 +71,11 @@ impl IntoResponse for ApiError {
     }
 }
 
-pub fn init(router: &Router) {
-    cfg.service(web::scope("authorize").configure(auth::config));
-    cfg.service(web::scope("osu").configure(osu::config));
-    cfg.service(web::scope("users").configure(users::config));
+pub fn init_routes() -> Router {
+    Router::new()
+        // General routes
+        .nest("/authorize", auth::init_routes())
+        .nest("/users", users::init_routes())
+        // Specific game routes
+        .nest("/osu", osu::init_routes())
 }

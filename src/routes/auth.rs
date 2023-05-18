@@ -1,5 +1,9 @@
-use actix_web::web::{Data, Query, ServiceConfig};
-use actix_web::{get, web, HttpResponse};
+use axum::Router;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
@@ -9,18 +13,12 @@ use crate::routes::ApiError;
 use crate::util::auth;
 use crate::util::auth::AuthType;
 
-pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(
-        web::scope("discord")
-            .service(discord_login)
-            .service(discord_login_callback),
-    );
-
-    cfg.service(
-        web::scope("osu")
-            .service(osu_login)
-            .service(osu_login_callback),
-    );
+pub fn init_routes() -> Router {
+    Router::new()
+        .route("/discord", get(discord_login))
+        .route("/discord/callback", get(discord_login_callback))
+        .route("/osu", get(osu_login))
+        .route("/osu/callback", get(osu_login_callback))
 }
 
 #[derive(Serialize, Deserialize)]
@@ -30,8 +28,6 @@ pub struct Authorization {
 }
 
 // DISCORD
-
-#[get("")]
 pub async fn discord_login() -> Result<HttpResponse, ApiError> {
     let (url, _csrf_token) = auth::DISCORD_CLIENT
         .authorize_url(CsrfToken::new_random)
@@ -43,7 +39,6 @@ pub async fn discord_login() -> Result<HttpResponse, ApiError> {
         .finish())
 }
 
-#[get("/callback")]
 pub async fn discord_login_callback(
     repo: Data<Repo>,
     info: Query<Authorization>,
@@ -63,12 +58,10 @@ pub async fn discord_login_callback(
         return Ok(HttpResponse::Ok().json(user.id));
     }
 
-    Ok(HttpResponse::Ok().json("Not found"))
+    Ok(Json("Not found"))
 }
 
 // OSU
-
-#[get("")]
 pub async fn osu_login() -> Result<HttpResponse, ApiError> {
     let (url, _csrf_token) = auth::OSU_CLIENT
         .authorize_url(CsrfToken::new_random)
@@ -81,7 +74,6 @@ pub async fn osu_login() -> Result<HttpResponse, ApiError> {
         .finish())
 }
 
-#[get("/callback")]
 pub async fn osu_login_callback(
     repo: Data<Repo>,
     info: Query<Authorization>,
@@ -105,8 +97,8 @@ pub async fn osu_login_callback(
         repo.user
             .create(&*user.id.to_string().clone(), &AuthType::Osu)
             .await;
-        return Ok(HttpResponse::Ok().json(user.id));
+        return Ok(Json(user.id));
     }
 
-    Ok(HttpResponse::Ok().json(user.id))
+    Ok(JSon(user.id))
 }

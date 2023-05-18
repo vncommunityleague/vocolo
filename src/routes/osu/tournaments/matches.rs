@@ -1,19 +1,18 @@
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{delete, get, patch, post, web, HttpResponse};
+use axum::Router;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
 use crate::routes::{ApiError, ApiResult};
 
-pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(
-        web::scope("matches")
-            .service(matches_get)
-            .service(matches_list)
-            .service(matches_post)
-            .service(matches_patch)
-            .service(matches_delete),
-    );
+pub fn init_routes() -> Router {
+    Router::new()
+        .route("", get(matches_list).post(matches_post))
+        .route("/:match_id", get(matches_get).patch(matches_patch).delete(matches_delete))
 }
 
 #[derive(Serialize, Deserialize, Clone)]

@@ -1,34 +1,32 @@
 use axum::Router;
-use axum::routing::get;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use crate::repository::Repo;
 use crate::routes::{ApiError, ApiResult};
-use actix_web::web::{Data, ServiceConfig};
-use actix_web::{get, web, HttpResponse};
 use crate::models::user::User;
 
-pub fn config(router: &Router) {
-    router.route("/me", get(get_current_user));
-    router.route("/{id}", get(get_user));
+pub fn init_routes() -> Router {
+    Router::new()
+        .route("/me", get(user_current))
+        .route("/:id", get(user_get));
 }
 
-#[get("/me")]
-pub async fn get_current_user() -> ApiResult<User> {
+pub async fn user_current() -> ApiResult<User> {
     todo!()
 }
 
-#[get("/{id}")]
-pub async fn get_user(
+pub async fn user_get(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
+    Path(id): Path<String>,
 ) -> ApiResult<User> {
-    let path = info.into_inner();
-    let id = &path.0;
-
-    let user = repo.user.find_user(id).await;
+    let user = repo.user.find_user(&id).await;
 
     if user.is_none() {
         return Err(ApiError::UserNotFound);
     }
 
-    Ok(HttpResponse::Ok().json(user.unwrap()))
+    Ok(Json(user.unwrap()))
 }
