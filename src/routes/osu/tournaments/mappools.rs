@@ -1,6 +1,7 @@
-use crate::models::osu::tournaments::OsuMap;
+use crate::models::osu::tournaments::{OsuMap, OsuMappool};
 use crate::models::osu::BeatmapMod;
 use axum::Router;
+use axum::extract::State;
 use axum::{
     extract::{Path, Query},
     routing::{delete, get, post, put},
@@ -10,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResult};
+use crate::routes::{ApiError, ApiResult, get_option_from_query};
 
 pub fn init_routes() -> Router {
     Router::new()
@@ -18,28 +19,29 @@ pub fn init_routes() -> Router {
         .route("/:mappool_id", get(mappools_get).patch(mappools_modify).delete(mappools_delete))
 }
 
-pub async fn mappools_get(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
-    let path = info.into_inner();
-    let tournament_id = &path.0;
-    let mappool_id = &path.1;
+pub async fn mappools_get(
+    State(repo): State<Repo>, 
+    Path(tournament_id, mappool_id): Path<(String, String)>
+) -> ApiResult<OsuMappool> {
     let tournament = repo
         .osu
         .tournaments
-        .find_tournament_by_id_or_slug(tournament_id)
+        .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    if tournament.is_err() {
-        return Err(ApiError::from_repo_error(tournament.err().unwrap()));
+    match &get_option_from_query(tournament) {
+        Some(value) => tournament = value,
+        None => Err(ApiError::TournamentNotFound),
+    };
+
+    let mappool = tournament
+        .get_mappool(mappool_id.to_string())
+        .await;
+
+    match &mappool {
+        Ok(value) => mappool = value,
+        None => Err(ApiError::MappoolNotFound),
     }
-
-    let tournament = tournament.unwrap();
-
-    if tournament.is_none() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    let tournament = tournament.unwrap();
-    let mappool = tournament.get_mappool(mappool_id.to_string()).await;
 
     if mappool.is_none() {
         return Err(ApiError::MappoolNotFound);

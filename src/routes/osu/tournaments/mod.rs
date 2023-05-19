@@ -1,8 +1,13 @@
-use mongodb::bson::{doc, oid::ObjectId};
+use axum::routing::get;
+use axum::{Router, Json};
+use axum::extract::{State, Path};
+use axum::http::StatusCode;
+use mongodb::bson::{doc};
 use serde::{Deserialize, Serialize};
 
+use crate::models::osu::tournaments::OsuTournament;
 use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResult};
+use crate::routes::{ApiError, ApiResult, get_option_from_query, ApiResponse};
 
 mod mappools;
 mod matches;
@@ -17,53 +22,48 @@ pub fn init_routes() -> Router {
         .route("", get(tournaments_list).post(tournaments_create))
         .nest(":tournament_id/mappools", mappools::init_routes())
         .nest(":tournament_id/players", players::init_routes())
-        .nest(":tournament_id/staff", staff::init_routes())
-        .nest(":tournament_id/teams", teams::init_routes())
+        // .nest(":tournament_id/staff", staff::init_routes())
+        // .nest(":tournament_id/teams", teams::init_routes())
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-struct OsuTournamentResponse {
-    id: ObjectId,
-    title: String,
-    slug: String,
-}
-
-pub async fn tournaments_get(repo: Data<Repo>, Path(tournament_id): Path<String>) -> ApiResult {
+pub async fn tournaments_get(
+    State(repo): State<Repo>, 
+    Path(tournament_id): Path<String>
+) -> ApiResult<OsuTournament> {
     let tournament = repo
         .osu
         .tournaments
-        .find_tournament_by_id_or_slug(tournament_id)
+        .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    if tournament.is_err() {
-        return Err(ApiError::from_repo_error(tournament.err().unwrap()));
-    }
+    let tournament = match get_option_from_query(tournament) {
+        Some(value) => value,
+        None => return Err(ApiError::TournamentNotFound),
+    };
 
-    let tournament = tournament.unwrap();
-
-    if tournament.is_none() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    Ok(Json(tournament.unwrap()))
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(tournament)
+    )
 }
 
 // TODO: Add SearchConfig
-#[get("")]
-pub async fn tournaments_list(repo: Data<Repo>) -> ApiResult {
+pub async fn tournaments_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuTournament>> {
     let tournaments = repo.osu.tournaments.list_tournaments().await;
 
-    if tournaments.is_err() {
-        return Err(ApiError::from_repo_error(tournaments.err().unwrap()));
-    }
+    // if tournaments.is_err() {
+    //     return Err(ApiError::from_repo_error(tournaments.err().unwrap()));
+    // }
 
-    let tournaments = tournaments.unwrap();
+    // let tournaments = tournaments.unwrap();
 
-    if tournaments.is_none() {
-        return Err(ApiError::TournamentNotFound);
-    }
+    // if tournaments.is_none() {
+    //     return Err(ApiError::TournamentNotFound);
+    // }
 
-    Ok(HttpResponse::Ok().json(tournaments.unwrap()))
+    // Ok(HttpResponse::Ok().json(tournaments.unwrap()))
+
+    Ok(None)
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -72,24 +72,22 @@ pub struct TournamentCreateRequest {
     pub slug: String,
 }
 
-#[post("")]
 pub async fn tournaments_create(
-    repo: Data<Repo>,
+    State(repo): State<Repo>, 
     Json(data): Json<TournamentCreateRequest>,
-) -> ApiResult {
+) -> ApiResult<OsuTournament> {
     let tournament_id = repo
         .osu
         .tournaments
         .create_tournament(data.slug.clone(), data.title.clone())
         .await;
 
-    match tournament_id 
+    let tournament_id = match get_option_from_query(tournament_id) {
+        Some(value) => value,
+        None => return Err(ApiError::InternalServerError { message: "Unkown".to_owned() }),
+    };
 
-    if tournament_id.is_err() {
-        return Err(ApiError::from_repo_error(tournament_id.err().unwrap()));
-    }
-
-    Ok(HttpResponse::Ok().json(tournament_id.unwrap()))
+    Ok(tournament_id)
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -98,52 +96,59 @@ pub struct TournamentEditRequest {
     pub slug: Option<String>,
 }
 
-#[patch("{tournament_id}")]
 pub async fn tournaments_modify(
-    repo: Data<Repo>,
-    info: web::Path<(String,)>,
-    data: web::Json<TournamentEditRequest>,
-) -> ApiResult {
-    let id_or_slug = info.into_inner().0;
+    State(repo): State<Repo>,
+    Path(tournament_id): Path<String>,
+    Json(data): Json<TournamentEditRequest>,
+) -> ApiResult<OsuTournament> {
     let tournament = repo
         .osu
         .tournaments
-        .find_tournament_by_id_or_slug(&id_or_slug)
+        .find_tournament_by_id_or_slug(&tournament_id)
+        .await;
+
+    let tournament = match get_option_from_query(tournament) {
+        Some(value) => value,
+        None => return Err(ApiError::TournamentNotFound),
+    };
+
+    if let Some(t) = &data.title {
+        tournament.info.title = t.to_string();
+    }
+   
+    if let Some(s) = &data.slug {
+        tournament.info.slug = s.to_string();
+    }
+
+    repo.osu
+        .tournaments
+        .replace_tournament(&tournament_id, tournament)
         .await
         .unwrap();
 
-    if tournament.is_some() {
-        let mut tournament = tournament.unwrap();
-        if let Some(t) = &data.title {
-            tournament.info.title = t.to_string();
-        }
-        if let Some(s) = &data.slug {
-            tournament.info.slug = s.to_string();
-        }
-        repo.osu
-            .tournaments
-            .replace_tournament(&id_or_slug, tournament)
-            .await
-            .unwrap();
-        Ok(HttpResponse::Ok().finish())
-    } else {
-        Ok(HttpResponse::NotFound().finish())
-    }
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(tournament)
+    )
 }
 
-pub async fn tournaments_delete(repo: Data<Repo>, Path(tournament_id): Path<String>) -> ApiResult {
-    let tournament = repo.osu.tournaments.delete_tournament(tournament_id).await;
+pub async fn tournaments_delete(
+    State(repo): State<Repo>, 
+    Path(tournament_id): Path<String>
+) -> ApiResult<()> {
+    let tournament = repo
+        .osu
+        .tournaments
+        .delete_tournament(&tournament_id)
+        .await;
 
-    if tournament.is_err() {
-        return Err(ApiError::from_repo_error(tournament.err().unwrap()));
-    }
+    match &get_option_from_query(tournament) {
+        Some(value) => tournament = value,
+        None => Err(ApiError::TournamentNotFound),
+    };
 
-    let tournament = tournament.unwrap();
-
-    match tournament {
-        Ok(tournament) => CustomResponseBuilder::new()
-            .status_code(StatusCode::NO_CONTENT)
-            .build(),
-        Err(e) => Err(ApiError::TournamentNotFound)
-    }
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::NO_CONTENT)
+        // .body(tournament)
+    )
 }

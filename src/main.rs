@@ -22,7 +22,8 @@ async fn main() {
         .with_state(repo)
         ;
 
-    routes::init(&app).await;
+    routes::init_routes(&app).await;
+
     axum::Server::bind(&SocketAddr::from(EnvironmentVariable::ServerHost.unwrap()))
         .serve(app.into_make_service())
         .await
