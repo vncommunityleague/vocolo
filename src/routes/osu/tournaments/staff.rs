@@ -1,21 +1,24 @@
-use axum::{
-    extract::{Path, Query},
-    Json,
-    Router, routing::{delete, get, post, put},
-};
 use axum::extract::State;
 use axum::http::StatusCode;
+use axum::{
+    extract::{Path, Query},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::models::tournaments::TournamentStaff;
 use crate::models::user::Role;
 use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResponse, ApiResult, convert_result};
+use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router {
     Router::new()
         .route(":tournament_id/staff", post(staff_add))
-        .route(":tournament_id/staff/:user_id", put(staff_modify).delete(staff_delete))
+        .route(
+            ":tournament_id/staff/:user_id",
+            put(staff_modify).delete(staff_delete),
+        )
 }
 
 #[derive(Serialize, Deserialize, Clone)]

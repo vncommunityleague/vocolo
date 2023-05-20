@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-
-use derive_more::Display;
+use strum_macros::Display;
 
 pub mod tournaments;
 
@@ -16,23 +15,23 @@ pub enum GameMode {
 
 #[derive(Display, Serialize, Deserialize, Clone, Debug)]
 pub enum BeatmapMod {
-    #[display(fmt = "NoMod")]
+    #[strum(props(display = "NoMod"))]
     NM,
-    #[display(fmt = "Hidden")]
+    #[strum(props(display = "Hidden"))]
     HD,
-    #[display(fmt = "HardRock")]
+    #[strum(props(display = "HardRock"))]
     HR,
-    #[display(fmt = "DoubleTime")]
+    #[strum(props(display = "DoubleTime"))]
     DT,
-    #[display(fmt = "FreeMod")]
+    #[strum(props(display = "FreeMod"))]
     FM,
-    #[display(fmt = "Easy")]
+    #[strum(props(display = "Easy"))]
     EZ,
-    #[display(fmt = "HalfTime")]
+    #[strum(props(display = "HalfTime"))]
     HT,
-    #[display(fmt = "Flashlight")]
+    #[strum(props(display = "Flashlight"))]
     FL,
-    #[display(fmt = "Tiebreaker")]
+    #[strum(props(display = "Tiebreaker"))]
     TB,
 }
 

@@ -50,6 +50,9 @@ pub enum ApiError {
 
     #[error("Not Found: {0}")]
     NotFound(String),
+
+    #[error("Internal Server Error")]
+    InternalServerError,
 }
 
 impl IntoResponse for ApiError {
@@ -62,6 +65,9 @@ impl IntoResponse for ApiError {
             // 5xx errors
             ApiError::Database(..) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "database_internal_error")
+            }
+            ApiError::InternalServerError => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "internal_server_error")
             }
         };
 

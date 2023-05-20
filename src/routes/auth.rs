@@ -1,3 +1,6 @@
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::response::Redirect;
 use axum::{
     extract::{Path, Query},
     routing::{delete, get, post, put},
@@ -8,7 +11,7 @@ use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResponse};
+use crate::routes::{ApiError, ApiResponse, ApiResult};
 use crate::util::auth;
 use crate::util::auth::AuthType;
 
@@ -27,21 +30,19 @@ pub struct Authorization {
 }
 
 // DISCORD
-pub async fn discord_login() -> ApiResponse<()> {
+pub async fn discord_login() -> Redirect {
     let (url, _csrf_token) = auth::DISCORD_CLIENT
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
         .url();
 
-    Ok(HttpResponse::TemporaryRedirect()
-        .append_header(("Location", &*url.to_string()))
-        .finish())
+    Redirect::to(&*url.to_string())
 }
 
 pub async fn discord_login_callback(
-    repo: Data<Repo>,
-    info: Query<Authorization>,
-) -> ApiResponse<()> {
+    State(repo): State<Repo>,
+    Query(info): Query<Authorization>,
+) -> ApiResult<()> {
     let token = auth::DISCORD_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
@@ -54,26 +55,27 @@ pub async fn discord_login_callback(
 
     if repo.user.find_user_by_discord_id(&user.id).await.is_none() {
         repo.user.create(&user.id, &AuthType::Discord).await;
-        return Ok(HttpResponse::Ok().json(user.id));
+        return Ok(ApiResponse::new().status_code(StatusCode::CREATED));
     }
 
-    Ok(Json("Not found"))
+    Err(ApiError::InternalServerError)
 }
 
 // OSU
-pub async fn osu_login() -> ApiResponse<()> {
+pub async fn osu_login() -> Redirect {
     let (url, _csrf_token) = auth::OSU_CLIENT
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("identify".to_string()))
         .add_scope(Scope::new("public".to_string()))
         .url();
 
-    Ok(HttpResponse::TemporaryRedirect()
-        .append_header(("Location", &*url.to_string()))
-        .finish())
+    Redirect::to(&*url.to_string())
 }
 
-pub async fn osu_login_callback(repo: Data<Repo>, info: Query<Authorization>) -> ApiResponse<()> {
+pub async fn osu_login_callback(
+    State(repo): State<Repo>,
+    Query(info): Query<Authorization>,
+) -> ApiResult<()> {
     let token = auth::OSU_CLIENT
         .exchange_code(AuthorizationCode::new(info.code.clone()))
         .request_async(async_http_client)
@@ -93,8 +95,8 @@ pub async fn osu_login_callback(repo: Data<Repo>, info: Query<Authorization>) ->
         repo.user
             .create(&*user.id.to_string().clone(), &AuthType::Osu)
             .await;
-        return Ok(Json(user.id));
+        return Ok(ApiResponse::new().status_code(StatusCode::CREATED));
     }
 
-    Ok(JSon(user.id))
+    Err(ApiError::InternalServerError)
 }

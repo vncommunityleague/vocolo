@@ -90,9 +90,6 @@ pub struct OsuTournament {
     #[serde(default)]
     pub teams: Vec<OsuTeam>,
 
-    #[serde(default)]
-    pub mappools: Vec<OsuMappool>,
-
     /// The current stage of the tournament
     #[serde(skip_serializing_if = "Option::is_none")]
     pub current_stage: Option<ObjectId>,
@@ -103,16 +100,6 @@ impl OsuTournament {
         for (i, team) in self.teams.iter().enumerate() {
             if team.info.name == name {
                 return Some((i, team.clone()));
-            }
-        }
-
-        None
-    }
-
-    pub async fn get_mappool(&self, slug: String) -> Option<(usize, OsuMappool)> {
-        for (i, mappool) in self.mappools.iter().enumerate() {
-            if mappool.slug == slug {
-                return Some((i, mappool.clone()));
             }
         }
 

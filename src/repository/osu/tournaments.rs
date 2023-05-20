@@ -1,22 +1,31 @@
-use mongodb::bson::oid::ObjectId;
 use mongodb::bson::{doc, Document};
 use mongodb::{Collection, Database};
 use tokio_stream::StreamExt;
 
-use crate::models::osu::tournaments::OsuTournament;
+use crate::models::osu::tournaments::{OsuMappool, OsuMatch, OsuTournament};
 use crate::repository::{to_object_id, RepoError, RepoResult};
 
 #[derive(Clone)]
 pub struct OsuTournamentRepo {
     pub tournaments: Collection<OsuTournament>,
+    pub mappools: Collection<OsuMappool>,
+    pub matches: Collection<OsuMatch>,
 }
 
 impl OsuTournamentRepo {
     pub(crate) async fn init(database: &Database) -> Self {
         let tournaments: Collection<OsuTournament> = database.collection("tournaments");
+        let mappools: Collection<OsuMappool> = database.collection("mappools");
+        let matches: Collection<OsuMatch> = database.collection("matches");
 
-        OsuTournamentRepo { tournaments }
+        OsuTournamentRepo {
+            tournaments,
+            mappools,
+            matches,
+        }
     }
+
+    // Tournaments
 
     /// Lists all [`OsuTournament`] in the database.
     pub async fn list_tournaments(&self) -> RepoResult<Vec<OsuTournament>> {
@@ -35,19 +44,6 @@ impl OsuTournamentRepo {
             ]
         })
         .await
-    }
-
-    /// Finds and returns all [`OsuTournament`] that match the id or slug.
-    pub async fn find_tournaments_by_ids_or_slugs(
-        &self,
-        id_or_slug_list: Vec<String>,
-    ) -> RepoResult<Vec<OsuTournament>> {
-        self.find_tournaments(doc! {
-            "$or": [
-                { "_id": { "$in": id_or_slug_list.iter().map(|id| to_object_id(id)).collect::<Vec<ObjectId>>() } },
-                { "slug": { "$in": id_or_slug_list } }
-            ]
-        }).await
     }
 
     /// Finds the [`OsuTournament`] that matches the filter.
@@ -90,6 +86,7 @@ impl OsuTournamentRepo {
     ) -> RepoResult<OsuTournament> {
         let tournament = self.find_tournament_by_id_or_slug(&slug).await;
 
+        // TODO: check for existed one
         // if tournament.is_ok() && tournament.unwrap().is_some() {
         //     return Err(RepoError::AlreadyExist {
         //         key: "tournament.slug".to_string(),
@@ -141,24 +138,144 @@ impl OsuTournamentRepo {
         self.find_tournament_by_id_or_slug(id_or_slug).await
     }
 
+    pub async fn delete_tournament_by_id_or_slug(
+        &self,
+        id_or_slug: &str,
+    ) -> RepoResult<OsuTournament> {
+        self.delete_tournament(doc! {
+            "$or": [
+                { "_id": to_object_id(id_or_slug) },
+                { "slug": id_or_slug }
+            ]
+        })
+        .await
+    }
+
     /// Deletes the [`OsuTournament`] that matches the id or slug.
-    pub async fn delete_tournament(&self, id_or_slug: &str) -> RepoResult<OsuTournament> {
-        let query_result = self
-            .tournaments
-            .find_one_and_delete(
-                doc! {
-                    "$or": [
-                        { "_id": to_object_id(id_or_slug) },
-                        { "slug": id_or_slug }
-                    ]
-                },
-                None,
-            )
-            .await;
+    pub async fn delete_tournament(&self, filter: Document) -> RepoResult<OsuTournament> {
+        let query_result = self.tournaments.find_one_and_delete(filter, None).await;
 
         return match query_result {
             Ok(tournament) => Ok(tournament),
             Err(e) => Err(RepoError::Internal(e)),
         };
+    }
+
+    // Mappools
+
+    pub async fn list_mappools(&self) -> RepoResult<Vec<OsuMappool>> {
+        self.find_mappools(doc! {}).await
+    }
+
+    pub async fn find_mappool(&self, filter: Document) -> RepoResult<OsuMappool> {
+        let query_result = self.mappools.find_one(Some(filter), None).await;
+
+        return match query_result {
+            Ok(value) => Ok(value),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
+    }
+
+    pub async fn find_mappools(&self, filter: Document) -> RepoResult<Vec<OsuMappool>> {
+        let cursor = self.mappools.find(Some(filter), None).await;
+
+        if cursor.is_err() {
+            return Err(RepoError::Internal(cursor.unwrap_err()));
+        }
+
+        let mut cursor = cursor.unwrap();
+        let mut mappools = Vec::new();
+
+        while let Some(result) = cursor.next().await {
+            mappools.push(
+                result.unwrap_or_else(|e| {
+                    panic!("Unexpected error while finding tournament: {}.", e)
+                }),
+            );
+        }
+
+        Ok(Some(mappools))
+    }
+
+    pub async fn create_mappool(&self, mappool: OsuMappool) -> RepoResult<OsuMappool> {
+        // TODO: check for existed one
+        let query_result = self
+            .mappools
+            .clone_with_type()
+            .insert_one(mappool, None)
+            .await;
+
+        return match query_result {
+            Ok(_) => Ok(self.find_mappool(doc! {}).await.unwrap()),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
+    }
+
+    pub async fn replace_mappool(&self, id: &str, new_data: OsuMappool) -> RepoResult<OsuMappool> {
+        let query_result = self
+            .mappools
+            .replace_one(
+                doc! {
+                    "_id": to_object_id(id)
+                },
+                new_data,
+                None,
+            )
+            .await
+            .unwrap_or_else(|e| panic!("Unexpected error while replacing mappool: {}.", e));
+
+        if query_result.modified_count == 0 {
+            return Ok(None);
+        }
+
+        self.find_mappool(doc! {"_id": to_object_id(id)}).await
+    }
+
+    pub async fn delete_mappool(&self, id: &str) -> RepoResult<OsuMappool> {
+        let query_result = self
+            .mappools
+            .find_one_and_delete(doc! {"_id": to_object_id(id)}, None)
+            .await;
+
+        return match query_result {
+            Ok(mappool) => Ok(mappool),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
+    }
+
+    // Matches
+
+    pub async fn list_matches(&self) -> RepoResult<Vec<OsuMatch>> {
+        self.find_matches(doc! {}).await
+    }
+
+    pub async fn find_match(&self, filter: Document) -> RepoResult<OsuMatch> {
+        let query_result = self.matches.find_one(Some(filter), None).await;
+
+        return match query_result {
+            Ok(value) => Ok(value),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
+    }
+
+    pub async fn find_matches(&self, filter: Document) -> RepoResult<Vec<OsuMatch>> {
+        let cursor = self.matches.find(Some(filter), None).await;
+
+        if cursor.is_err() {
+            return Err(RepoError::Internal(cursor.unwrap_err()));
+        }
+
+        let mut cursor = cursor.unwrap();
+        let mut mappools = Vec::new();
+
+        while let Some(result) = cursor.next().await {
+            mappools.push(
+                result.unwrap_or_else(|e| {
+                    panic!("Unexpected error while finding tournament: {}.", e)
+                }),
+            );
+        }
+
+        Ok(Some(mappools))
     }
 }

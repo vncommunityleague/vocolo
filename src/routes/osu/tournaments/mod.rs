@@ -9,7 +9,7 @@ use crate::models::osu::tournaments::OsuTournament;
 use crate::repository::Repo;
 use crate::routes::{convert_result, ApiResponse, ApiResult};
 
-// mod mappools;
+mod mappools;
 mod matches;
 // mod players;
 mod staff;
@@ -25,9 +25,9 @@ pub fn init_routes() -> Router {
                 .patch(tournaments_modify)
                 .delete(tournaments_delete),
         )
-        // .nest(":tournament_id/mappools", mappools::init_routes())
+        .nest(":tournament_id/mappools", mappools::init_routes())
         .nest(":tournament_id/matches", matches::init_routes())
-    // .nest(":tournament_id/players", players::init_routes())
+        // .nest(":tournament_id/players", players::init_routes())
         .nest(":tournament_id/staff", staff::init_routes())
     // .nest(":tournament_id/teams", teams::init_routes())
 }
