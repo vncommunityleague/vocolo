@@ -50,7 +50,7 @@ impl OsuTournamentRepo {
         }).await
     }
 
-    /// Finds the [`OsuTournament`] that matches the id or slug.
+    /// Finds the [`OsuTournament`] that matches the filter.
     pub async fn find_tournament(&self, filter: Document) -> RepoResult<OsuTournament> {
         let tournament = self.tournaments.find_one(Some(filter), None).await;
 

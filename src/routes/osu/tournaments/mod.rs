@@ -10,9 +10,9 @@ use crate::repository::Repo;
 use crate::routes::{convert_result, ApiResponse, ApiResult};
 
 // mod mappools;
-// mod matches;
+mod matches;
 // mod players;
-// mod staff;
+mod staff;
 // mod stages;
 // mod teams;
 
@@ -25,9 +25,10 @@ pub fn init_routes() -> Router {
                 .patch(tournaments_modify)
                 .delete(tournaments_delete),
         )
-    // .nest(":tournament_id/mappools", mappools::init_routes())
+        // .nest(":tournament_id/mappools", mappools::init_routes())
+        .nest(":tournament_id/matches", matches::init_routes())
     // .nest(":tournament_id/players", players::init_routes())
-    // .nest(":tournament_id/staff", staff::init_routes())
+        .nest(":tournament_id/staff", staff::init_routes())
     // .nest(":tournament_id/teams", teams::init_routes())
 }
 

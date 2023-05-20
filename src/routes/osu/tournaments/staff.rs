@@ -3,18 +3,19 @@ use axum::{
     Json,
     Router, routing::{delete, get, post, put},
 };
-use axum::Router;
+use axum::extract::State;
+use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::models::tournaments::TournamentStaff;
 use crate::models::user::Role;
 use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResult};
+use crate::routes::{ApiError, ApiResponse, ApiResult, convert_result};
 
-pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(staff_add);
-    cfg.service(staff_modify);
-    cfg.service(staff_delete);
+pub fn init_routes() -> Router {
+    Router::new()
+        .route(":tournament_id/staff", post(staff_add))
+        .route(":tournament_id/staff/:user_id", put(staff_modify).delete(staff_delete))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -23,34 +24,26 @@ pub struct AddStaffRequest {
     pub roles: Option<Role>,
 }
 
-#[post("{tournament_id}/staff")]
 pub async fn staff_add(
-    repo: Data<Repo>,
-    info: web::Path<(String, )>,
-    data: web::Json<AddStaffRequest>,
-) -> ApiResult {
-    let tournament_id = info.into_inner().0;
+    State(repo): State<Repo>,
+    Path(tournament_id): Path<String>,
+    Json(data): Json<AddStaffRequest>,
+) -> ApiResult<()> {
     let tournament = repo
         .osu
         .tournaments
         .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    if tournament.is_err() {
-        return Err(ApiError::TournamentNotFound);
-    }
+    let mut tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
 
-    let tournament = tournament.unwrap();
-
-    if tournament.is_none() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    let mut tournament = tournament.unwrap();
     let user = repo.user.find_user_by_osu_id(&data.id).await;
 
     if user.is_none() {
-        return Err(ApiError::UserNotFound);
+        return Err(ApiError::NotFound("user".to_string()));
     }
 
     let user = user.unwrap();
@@ -61,7 +54,13 @@ pub async fn staff_add(
         roles: vec![roles],
     });
 
-    Ok(HttpResponse::Ok().finish())
+    let _ = repo
+        .osu
+        .tournaments
+        .replace_tournament(&tournament_id, tournament)
+        .await;
+
+    Ok(ApiResponse::new().status_code(StatusCode::OK))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -69,36 +68,25 @@ pub struct EditStaffRequest {
     pub roles: Option<Role>,
 }
 
-#[patch("{tournament_id}/staff/{user_id}")]
 pub async fn staff_modify(
-    repo: Data<Repo>,
-    info: web::Path<(String, String)>,
-    data: web::Json<EditStaffRequest>,
-) -> ApiResult {
-    let path = info.into_inner();
-    let tournament_id = &path.0;
-    let user_id = &path.1;
+    State(repo): State<Repo>,
+    Path((tournament_id, user_id)): Path<(String, String)>,
+    Json(data): Json<EditStaffRequest>,
+) -> ApiResult<()> {
     let tournament = repo
         .osu
         .tournaments
-        .find_tournament_by_id_or_slug(tournament_id)
+        .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    if tournament.is_err() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    let tournament = tournament.unwrap();
-
-    if tournament.is_none() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    let mut tournament = tournament.unwrap();
-    let staff = repo.user.find_user_by_osu_id(user_id).await;
+    let mut tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
+    let staff = repo.user.find_user_by_osu_id(&user_id).await;
 
     if staff.is_none() {
-        return Err(ApiError::UserNotFound);
+        return Err(ApiError::NotFound("staff".to_string()));
     }
 
     let staff = staff.unwrap();
@@ -110,31 +98,29 @@ pub async fn staff_modify(
         }
     }
 
-    Ok(HttpResponse::Ok().finish())
+    let _ = repo
+        .osu
+        .tournaments
+        .replace_tournament(&tournament_id, tournament)
+        .await;
+
+    Ok(ApiResponse::new().status_code(StatusCode::OK))
 }
 
-#[delete("{tournament_id}/staff/{user_id}")]
-pub async fn staff_delete(repo: Data<Repo>, info: web::Path<(String, String)>) -> ApiResult {
-    let path = info.into_inner();
-    let tournament_id = &path.0;
-    let user_id = &path.1;
+pub async fn staff_delete(
+    State(repo): State<Repo>,
+    Path((tournament_id, user_id)): Path<(String, String)>,
+) -> ApiResult<()> {
     let tournament = repo
         .osu
         .tournaments
-        .find_tournament_by_id_or_slug(tournament_id)
+        .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    if tournament.is_err() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    let tournament = tournament.unwrap();
-
-    if tournament.is_none() {
-        return Err(ApiError::TournamentNotFound);
-    }
-
-    let mut tournament = tournament.unwrap();
+    let mut tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
     let staff = tournament.info.staff.clone();
     let mut done = false;
 
@@ -146,8 +132,14 @@ pub async fn staff_delete(repo: Data<Repo>, info: web::Path<(String, String)>) -
     }
 
     if !done {
-        return Err(ApiError::UserNotFound);
+        return Err(ApiError::NotFound("staff".to_string()));
     }
 
-    Ok(HttpResponse::Ok().finish())
+    let _ = repo
+        .osu
+        .tournaments
+        .replace_tournament(&tournament_id, tournament)
+        .await;
+
+    Ok(ApiResponse::new().status_code(StatusCode::OK))
 }
