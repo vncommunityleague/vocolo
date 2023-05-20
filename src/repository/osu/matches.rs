@@ -1,5 +1,6 @@
-use crate::models::osu::tournaments::OsuMatch;
 use mongodb::{Collection, Database};
+
+use crate::models::osu::tournaments::OsuMatch;
 
 #[derive(Clone)]
 pub struct OsuMatchRepo {

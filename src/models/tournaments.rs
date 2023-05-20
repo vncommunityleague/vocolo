@@ -1,6 +1,7 @@
-use crate::models::user::Role;
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+
+use crate::models::user::Role;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TournamentStaff {

@@ -1,9 +1,9 @@
-use axum::Router;
 use axum::{
     extract::{Path, Query},
-    routing::{delete, get, post, put},
-    Json, Router,
+    Json,
+    Router, routing::{delete, get, post, put},
 };
+use axum::Router;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;
@@ -20,7 +20,7 @@ pub fn init_routes() -> Router {
 }
 
 #[get("{tournament_id}/players")]
-pub async fn players_tournament_get(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
+pub async fn players_tournament_get(repo: Data<Repo>, info: web::Path<(String, )>) -> ApiResult {
     let tournament_id = info.into_inner().0;
     let tournament = repo
         .osu

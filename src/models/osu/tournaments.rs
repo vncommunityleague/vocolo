@@ -1,7 +1,8 @@
-use crate::models::osu::BeatmapMod;
-use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentStaff, TournamentTeamInfo};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+
+use crate::models::osu::BeatmapMod;
+use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentStaff, TournamentTeamInfo};
 
 pub enum TeamFormat {}
 

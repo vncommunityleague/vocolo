@@ -1,5 +1,6 @@
-use crate::util::constants::Database;
 use mongodb::Client;
+
+use crate::util::constants::Database;
 
 pub mod matches;
 pub mod tournaments;

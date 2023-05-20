@@ -1,12 +1,14 @@
-use crate::models::user::User;
-use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResult};
 use axum::extract::State;
+use axum::http::StatusCode;
 use axum::{
-    extract::{Path, Query},
+    extract::Path,
     routing::{delete, get, post, put},
     Json, Router,
 };
+
+use crate::models::user::User;
+use crate::repository::Repo;
+use crate::routes::{ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router {
     Router::new()
@@ -21,9 +23,7 @@ pub async fn user_current() -> ApiResult<User> {
 pub async fn user_get(State(repo): State<Repo>, Path(id): Path<String>) -> ApiResult<User> {
     let user = repo.user.find_user(&id).await;
 
-    if user.is_none() {
-        return Err(ApiError::UserNotFound);
-    }
-
-    Ok(Json(user.unwrap()))
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(user.unwrap()))
 }

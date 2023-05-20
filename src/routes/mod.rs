@@ -1,10 +1,11 @@
-use crate::repository::RepoError;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::{Json, Router};
 use bytes::{BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+use crate::repository::{RepoError, RepoResult};
 
 mod auth;
 mod osu;
@@ -15,24 +16,26 @@ pub type ApiResult<T> = Result<ApiResponse<T>, ApiError>;
 pub fn init_routes() -> Router {
     Router::new()
         // General routes
-        .nest("/authorize", auth::init_routes())
-        .nest("/users", users::init_routes())
+        .nest("authorize", auth::init_routes())
+        .nest("users", users::init_routes())
         // Specific game routes
-        .nest("/osu", osu::init_routes())
+        .nest("osu", osu::init_routes())
 }
 
-pub fn get_result_from_query<T>(input: Result<Option<T>, RepoError>) -> ApiResult<T>
+pub fn convert_result<T>(input: RepoResult<T>, model_type: &str) -> Result<T, ApiError>
 where
     T: Serialize,
 {
-    match input {
+    return match input {
         Ok(value) => match value {
-            Some(value) => Ok(ApiResponse::new().status_code(StatusCode::OK).body(value)),
-            None => Err(ApiError::UserNotFound),
+            Some(value) => Ok(value),
+            None => Err(ApiError::NotFound(model_type.to_string())),
         },
-        Err(error) => Err(ApiError::from_repo_error(error))
-    }
+        Err(e) => Err(ApiError::Database(e)),
+    };
 }
+
+// Custom error
 
 #[derive(Serialize, Deserialize)]
 struct ApiErrorWrapper<'a> {
@@ -46,7 +49,7 @@ pub enum ApiError {
     Database(#[from] RepoError),
 
     #[error("Not Found: {0}")]
-    NotFound(String)
+    NotFound(String),
 }
 
 impl IntoResponse for ApiError {
@@ -54,9 +57,12 @@ impl IntoResponse for ApiError {
         let (status_code, error_message) = match self {
             // 4xx errors
             ApiError::Database(RepoError::Duplicate(..)) => (StatusCode::BAD_REQUEST, "duplicate"),
+            ApiError::NotFound(..) => (StatusCode::NOT_FOUND, "not_found"),
 
             // 5xx errors
-            ApiError::Database(..) => (StatusCode::INTERNAL_SERVER_ERROR, "database_internal_error"),
+            ApiError::Database(..) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "database_internal_error")
+            }
         };
 
         let body = Json(ApiErrorWrapper {
@@ -68,6 +74,7 @@ impl IntoResponse for ApiError {
     }
 }
 
+// Custom Response
 #[derive(Debug)]
 struct ApiResponse<T: Serialize> {
     pub body: Option<T>,

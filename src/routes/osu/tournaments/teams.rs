@@ -1,13 +1,13 @@
-use crate::models::osu::tournaments::OsuTeam;
-use crate::models::tournaments::TournamentTeamInfo;
-use axum::Router;
 use axum::{
     extract::{Path, Query},
-    routing::{delete, get, post, put},
-    Json, Router,
+    Json,
+    Router, routing::{delete, get, post, put},
 };
+use axum::Router;
 use serde::{Deserialize, Serialize};
 
+use crate::models::osu::tournaments::OsuTeam;
+use crate::models::tournaments::TournamentTeamInfo;
 use crate::repository::Repo;
 use crate::routes::{ApiError, ApiResult};
 
@@ -26,7 +26,7 @@ pub struct TeamCreateRequest {
 #[post("{tournament_id}/teams")]
 pub async fn teams_create(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
+    info: web::Path<(String, )>,
     data: web::Json<TeamCreateRequest>,
 ) -> ApiResult {
     let path = info.into_inner();

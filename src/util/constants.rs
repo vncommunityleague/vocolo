@@ -1,17 +1,16 @@
 use std::env;
 use std::str::FromStr;
-
-use derive_more::Display;
+use strum_macros::{Display, EnumString};
 
 #[derive(Display)]
 pub enum Database {
-    #[display(fmt = "vcl")]
+    // #[display(fmt = "vcl")]
     Main,
-    #[display(fmt = "vcl_osu")]
+    // #[display(fmt = "vcl_osu")]
     Osu,
 }
 
-#[derive(Display)]
+#[derive(Display, EnumString)]
 pub enum EnvironmentVariable {
     // Server
     ServerPublicUrl,

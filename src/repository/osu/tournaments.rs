@@ -1,9 +1,10 @@
-use crate::models::osu::tournaments::OsuTournament;
-use crate::repository::{to_object_id, RepoError, RepoResult};
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::{doc, Document};
 use mongodb::{Collection, Database};
 use tokio_stream::StreamExt;
+
+use crate::models::osu::tournaments::OsuTournament;
+use crate::repository::{to_object_id, RepoError, RepoResult};
 
 #[derive(Clone)]
 pub struct OsuTournamentRepo {
@@ -53,13 +54,10 @@ impl OsuTournamentRepo {
     pub async fn find_tournament(&self, filter: Document) -> RepoResult<OsuTournament> {
         let tournament = self.tournaments.find_one(Some(filter), None).await;
 
-        if tournament.is_err() {
-            return Err(RepoError::QueryFatal {
-                message: format!("finding tournament: {}.", tournament.unwrap_err()),
-            });
-        }
-
-        Ok(tournament.unwrap())
+        return match tournament {
+            Ok(tournament) => Ok(tournament),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
     }
 
     /// Finds and returns all [`OsuTournament`] that match the filter.
@@ -67,9 +65,7 @@ impl OsuTournamentRepo {
         let cursor = self.tournaments.find(Some(filter), None).await;
 
         if cursor.is_err() {
-            return Err(RepoError::QueryFatal {
-                message: format!("finding tournaments: {}.", cursor.unwrap_err()),
-            });
+            return Err(RepoError::Internal(cursor.unwrap_err()));
         }
 
         let mut cursor = cursor.unwrap();
@@ -94,31 +90,28 @@ impl OsuTournamentRepo {
     ) -> RepoResult<OsuTournament> {
         let tournament = self.find_tournament_by_id_or_slug(&slug).await;
 
-        if tournament.is_ok() && tournament.unwrap().is_some() {
-            return Err(RepoError::AlreadyExist {
-                key: "tournament.slug".to_string(),
-            });
-        }
+        // if tournament.is_ok() && tournament.unwrap().is_some() {
+        //     return Err(RepoError::AlreadyExist {
+        //         key: "tournament.slug".to_string(),
+        //     });
+        // }
 
         let query_result = self
             .tournaments
             .clone_with_type()
             .insert_one(
                 doc! {
-                    "slug": slug,
+                    "slug": &slug,
                     "title": title,
                 },
                 None,
             )
             .await;
 
-        if query_result.is_err() {
-            return Err(RepoError::QueryFatal {
-                message: format!("creating tournament: {}.", query_result.unwrap_err()),
-            });
-        }
-
-        Ok(self.find_tournament_by_id_or_slug(&slug).await.unwrap())
+        return match query_result {
+            Ok(_) => Ok(self.find_tournament_by_id_or_slug(&slug).await.unwrap()),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
     }
 
     pub async fn replace_tournament(
@@ -163,14 +156,9 @@ impl OsuTournamentRepo {
             )
             .await;
 
-        if query_result.is_err() {
-            return Err(RepoError::QueryFatal {
-                message: format!("deleting tournament: {}.", query_result.unwrap_err()),
-            });
-        }
-
-        let query_result = query_result.unwrap();
-
-        Ok(query_result)
+        return match query_result {
+            Ok(tournament) => Ok(tournament),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
     }
 }

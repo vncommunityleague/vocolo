@@ -1,6 +1,8 @@
-use derive_more::Display;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+
+use serde::{Deserialize, Serialize};
+
+use derive_more::Display;
 
 pub mod tournaments;
 

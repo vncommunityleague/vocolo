@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::OsuTournament;
 use crate::repository::Repo;
-use crate::routes::{get_option_from_query, ApiError, ApiResponse, ApiResult};
+use crate::routes::{convert_result, ApiResponse, ApiResult};
 
 // mod mappools;
 // mod matches;
@@ -41,9 +41,9 @@ pub async fn tournaments_get(
         .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    let tournament = match get_option_from_query(tournament) {
-        Some(value) => value,
-        None => return Err(ApiError::TournamentNotFound),
+    let tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
     };
 
     Ok(ApiResponse::new()
@@ -55,10 +55,14 @@ pub async fn tournaments_get(
 pub async fn tournaments_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuTournament>> {
     let tournaments = repo.osu.tournaments.list_tournaments().await;
 
-    let tournaments = match get_option_from_query(tournaments) {
-        Some(value) => value,
-        None => return Err(ApiError::TournamentNotFound),
+    let tournaments = match convert_result(tournaments, "tournaments") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
     };
+
+    if tournaments.is_empty() {
+        return Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT));
+    }
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
@@ -81,13 +85,9 @@ pub async fn tournaments_create(
         .create_tournament(data.slug.clone(), data.title.clone())
         .await;
 
-    let tournament = match get_option_from_query(tournament) {
-        Some(value) => value,
-        None => {
-            return Err(ApiError::InternalServerError {
-                message: "Unknown".to_owned(),
-            })
-        }
+    let tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
     };
 
     Ok(ApiResponse::new()
@@ -112,9 +112,9 @@ pub async fn tournaments_modify(
         .find_tournament_by_id_or_slug(&tournament_id)
         .await;
 
-    let &mut tournament = match get_option_from_query(tournament) {
-        Some(value) => value,
-        None => return Err(ApiError::TournamentNotFound),
+    let mut tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
     };
 
     if let Some(t) = &data.title {
@@ -125,10 +125,12 @@ pub async fn tournaments_modify(
         tournament.info.slug = s.to_string();
     }
 
-    repo.osu
+    let tournament = repo
+        .osu
         .tournaments
         .replace_tournament(&tournament_id, tournament)
         .await
+        .unwrap()
         .unwrap();
 
     Ok(ApiResponse::new()
@@ -142,9 +144,9 @@ pub async fn tournaments_delete(
 ) -> ApiResult<()> {
     let tournament = repo.osu.tournaments.delete_tournament(&tournament_id).await;
 
-    let tournament = match &get_option_from_query(tournament) {
-        Some(value) => value,
-        None => Err(ApiError::TournamentNotFound),
+    let tournament = match convert_result(tournament, "tournament") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
     };
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))

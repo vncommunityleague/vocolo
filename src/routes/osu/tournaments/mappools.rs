@@ -1,17 +1,18 @@
-use crate::models::osu::tournaments::{OsuMap, OsuMappool};
-use crate::models::osu::BeatmapMod;
-use axum::extract::State;
-use axum::Router;
-use axum::{
-    extract::{Path, Query},
-    routing::{delete, get, post, put},
-    Json, Router,
-};
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
+use axum::{
+    extract::{Path, Query},
+    Json,
+    Router, routing::{delete, get, post, put},
+};
+use axum::extract::State;
+use axum::Router;
+use serde::{Deserialize, Serialize};
+
+use crate::models::osu::BeatmapMod;
+use crate::models::osu::tournaments::{OsuMap, OsuMappool};
 use crate::repository::Repo;
-use crate::routes::{get_option_from_query, ApiError, ApiResult};
+use crate::routes::{ApiError, ApiResult, get_option_from_query};
 
 pub fn init_routes() -> Router {
     Router::new()
@@ -53,7 +54,7 @@ pub async fn mappools_get(
     Ok(HttpResponse::Ok().json(mappool.unwrap().1))
 }
 
-pub async fn mappools_list(repo: Data<Repo>, info: web::Path<(String,)>) -> ApiResult {
+pub async fn mappools_list(repo: Data<Repo>, info: web::Path<(String, )>) -> ApiResult {
     let path = info.into_inner();
     let tournament_id = &path.0;
     let tournament = repo

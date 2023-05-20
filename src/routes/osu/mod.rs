@@ -1,4 +1,5 @@
 use axum::Router;
+use thiserror::Error;
 
 mod tournaments;
 

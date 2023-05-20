@@ -1,9 +1,9 @@
-use axum::Router;
 use axum::{
     extract::{Path, Query},
-    routing::{delete, get, post, put},
-    Json, Router,
+    Json,
+    Router, routing::{delete, get, post, put},
 };
+use axum::Router;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::Repo;

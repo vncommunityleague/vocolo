@@ -1,5 +1,7 @@
-use axum::Router;
 use std::net::{SocketAddr, ToSocketAddrs};
+
+use axum::Router;
+
 use util::constants::EnvironmentVariable;
 
 use crate::repository::Repo;
@@ -19,7 +21,7 @@ async fn main() {
     let app = Router::new()
         // .route("/", get(|| async { Ok(Response::new(StatusCode::OK))) })
         .with_state(repo)
-        .merge(routes::init_routes());
+        .nest("/", routes::init_routes());
 
     axum::Server::bind(&SocketAddr::from(
         EnvironmentVariable::ServerHost

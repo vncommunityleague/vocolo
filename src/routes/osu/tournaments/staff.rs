@@ -1,14 +1,15 @@
+use axum::{
+    extract::{Path, Query},
+    Json,
+    Router, routing::{delete, get, post, put},
+};
+use axum::Router;
+use serde::{Deserialize, Serialize};
+
 use crate::models::tournaments::TournamentStaff;
 use crate::models::user::Role;
 use crate::repository::Repo;
 use crate::routes::{ApiError, ApiResult};
-use axum::Router;
-use axum::{
-    extract::{Path, Query},
-    routing::{delete, get, post, put},
-    Json, Router,
-};
-use serde::{Deserialize, Serialize};
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(staff_add);
@@ -25,7 +26,7 @@ pub struct AddStaffRequest {
 #[post("{tournament_id}/staff")]
 pub async fn staff_add(
     repo: Data<Repo>,
-    info: web::Path<(String,)>,
+    info: web::Path<(String, )>,
     data: web::Json<AddStaffRequest>,
 ) -> ApiResult {
     let tournament_id = info.into_inner().0;
