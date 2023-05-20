@@ -1,5 +1,6 @@
-use derive_more::{Display, Error};
+use mongodb::bson::oid::ObjectId;
 use mongodb::Client;
+use thiserror::Error;
 
 use crate::util::constants::EnvironmentVariable;
 
@@ -8,13 +9,13 @@ pub mod user;
 
 pub type RepoResult<T> = Result<Option<T>, RepoError>;
 
-#[derive(Debug, Display, Error)]
+#[derive(Error, Debug)]
 pub enum RepoError {
-    #[display(fmt = "{} is already existed.", key)]
-    AlreadyExist { key: String },
+    #[error("{0} is already existed.")]
+    Duplicate(String),
 
-    #[display(fmt = "Failed to query: {}", message)]
-    QueryFatal { message: String },
+    #[error("Error while interacting with the database: {0}")]
+    Internal(#[from] mongodb::error::Error),
 }
 
 #[derive(Clone)]
@@ -25,12 +26,16 @@ pub struct Repo {
 
 impl Repo {
     pub async fn init() -> Self {
-        let client = Client::with_uri_str(EnvironmentVariable::MongoUri.value())
+        let client = &Client::with_uri_str(EnvironmentVariable::MongoUri.value())
             .await
             .expect("Cannot connect to MongoDB");
 
-        let user = user::UserRepo::init(&client).await;
-        let osu = osu::OsuRepo::init(&client).await;
+        let user = user::UserRepo::init(client).await;
+        let osu = osu::OsuRepo::init(client).await;
         Repo { user, osu }
     }
+}
+
+pub fn to_object_id(raw_id: &str) -> ObjectId {
+    ObjectId::parse_str(raw_id).unwrap_or_default()
 }

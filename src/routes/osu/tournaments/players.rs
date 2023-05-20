@@ -16,8 +16,7 @@ pub fn config(cfg: &mut ServiceConfig) {
 }
 
 pub fn init_routes() -> Router {
-    Router::new()
-        .route("", get(players_tournament_get))
+    Router::new().route("", get(players_tournament_get))
 }
 
 #[get("{tournament_id}/players")]

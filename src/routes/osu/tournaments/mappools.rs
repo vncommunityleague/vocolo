@@ -1,7 +1,7 @@
 use crate::models::osu::tournaments::{OsuMap, OsuMappool};
 use crate::models::osu::BeatmapMod;
-use axum::Router;
 use axum::extract::State;
+use axum::Router;
 use axum::{
     extract::{Path, Query},
     routing::{delete, get, post, put},
@@ -11,17 +11,22 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 use crate::repository::Repo;
-use crate::routes::{ApiError, ApiResult, get_option_from_query};
+use crate::routes::{get_option_from_query, ApiError, ApiResult};
 
 pub fn init_routes() -> Router {
     Router::new()
         .route("", get(mappools_list).post(mappools_create))
-        .route("/:mappool_id", get(mappools_get).patch(mappools_modify).delete(mappools_delete))
+        .route(
+            "/:mappool_id",
+            get(mappools_get)
+                .patch(mappools_modify)
+                .delete(mappools_delete),
+        )
 }
 
 pub async fn mappools_get(
-    State(repo): State<Repo>, 
-    Path(tournament_id, mappool_id): Path<(String, String)>
+    State(repo): State<Repo>,
+    Path(tournament_id, mappool_id): Path<(String, String)>,
 ) -> ApiResult<OsuMappool> {
     let tournament = repo
         .osu
@@ -34,9 +39,7 @@ pub async fn mappools_get(
         None => Err(ApiError::TournamentNotFound),
     };
 
-    let mappool = tournament
-        .get_mappool(mappool_id.to_string())
-        .await;
+    let mappool = tournament.get_mappool(mappool_id.to_string()).await;
 
     match &mappool {
         Ok(value) => mappool = value,

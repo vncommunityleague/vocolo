@@ -1,6 +1,5 @@
-use std::net::SocketAddr;
 use axum::Router;
-use reqwest::get;
+use std::net::{SocketAddr, ToSocketAddrs};
 use util::constants::EnvironmentVariable;
 
 use crate::repository::Repo;
@@ -18,14 +17,19 @@ async fn main() {
     let repo = Repo::init().await;
 
     let app = Router::new()
-        .route("/", get(|| async { "{ message: \"hoaq vu to\" }" }))
+        // .route("/", get(|| async { Ok(Response::new(StatusCode::OK))) })
         .with_state(repo)
-        ;
+        .merge(routes::init_routes());
 
-    routes::init_routes(&app).await;
-
-    axum::Server::bind(&SocketAddr::from(EnvironmentVariable::ServerHost.unwrap()))
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    axum::Server::bind(&SocketAddr::from(
+        EnvironmentVariable::ServerHost
+            .value()
+            .to_socket_addrs()
+            .unwrap()
+            .next()
+            .unwrap(),
+    ))
+    .serve(app.into_make_service())
+    .await
+    .unwrap();
 }

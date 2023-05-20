@@ -12,7 +12,10 @@ use crate::routes::{ApiError, ApiResult};
 pub fn init_routes() -> Router {
     Router::new()
         .route("", get(matches_list).post(matches_post))
-        .route("/:match_id", get(matches_get).patch(matches_patch).delete(matches_delete))
+        .route(
+            "/:match_id",
+            get(matches_get).patch(matches_patch).delete(matches_delete),
+        )
 }
 
 #[derive(Serialize, Deserialize, Clone)]

@@ -1,5 +1,5 @@
 use crate::models::osu::tournaments::OsuTournament;
-use crate::repository::{RepoError, RepoResult};
+use crate::repository::{to_object_id, RepoError, RepoResult};
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::{doc, Document};
 use mongodb::{Collection, Database};
@@ -29,7 +29,7 @@ impl OsuTournamentRepo {
     ) -> RepoResult<OsuTournament> {
         self.find_tournament(doc! {
             "$or": [
-                { "_id": ObjectId::parse_str(id_or_slug).unwrap_or_default() },
+                { "_id": to_object_id(id_or_slug) },
                 { "slug": id_or_slug }
             ]
         })
@@ -43,7 +43,7 @@ impl OsuTournamentRepo {
     ) -> RepoResult<Vec<OsuTournament>> {
         self.find_tournaments(doc! {
             "$or": [
-                { "_id": { "$in": id_or_slug_list.iter().map(|id| ObjectId::parse_str(id).unwrap_or_default()).collect::<Vec<ObjectId>>() } },
+                { "_id": { "$in": id_or_slug_list.iter().map(|id| to_object_id(id)).collect::<Vec<ObjectId>>() } },
                 { "slug": { "$in": id_or_slug_list } }
             ]
         }).await
@@ -91,7 +91,7 @@ impl OsuTournamentRepo {
         &self,
         slug: String,
         title: String,
-    ) -> Result<ObjectId, RepoError> {
+    ) -> RepoResult<OsuTournament> {
         let tournament = self.find_tournament_by_id_or_slug(&slug).await;
 
         if tournament.is_ok() && tournament.unwrap().is_some() {
@@ -118,9 +118,7 @@ impl OsuTournamentRepo {
             });
         }
 
-        let query_result = query_result.unwrap();
-
-        Ok(query_result.inserted_id.as_object_id().unwrap())
+        Ok(self.find_tournament_by_id_or_slug(&slug).await.unwrap())
     }
 
     pub async fn replace_tournament(
@@ -133,7 +131,7 @@ impl OsuTournamentRepo {
             .replace_one(
                 doc! {
                     "$or": [
-                        { "_id": ObjectId::parse_str(id_or_slug).unwrap_or_default() },
+                        { "_id": to_object_id(id_or_slug) },
                         { "slug": id_or_slug }
                     ]
                 },
@@ -157,7 +155,7 @@ impl OsuTournamentRepo {
             .find_one_and_delete(
                 doc! {
                     "$or": [
-                        { "_id": ObjectId::parse_str(id_or_slug).unwrap_or_default() },
+                        { "_id": to_object_id(id_or_slug) },
                         { "slug": id_or_slug }
                     ]
                 },

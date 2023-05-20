@@ -24,7 +24,6 @@ pub enum Role {
     /// Osu roles
     Mapper,
     Mappooler,
-
     // Others
 }
 
