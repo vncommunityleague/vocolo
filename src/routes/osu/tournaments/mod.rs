@@ -11,7 +11,7 @@ use crate::routes::{convert_result, ApiResponse, ApiResult};
 
 mod mappools;
 mod matches;
-// mod players;
+mod players;
 mod staff;
 // mod stages;
 // mod teams;
@@ -27,7 +27,7 @@ pub fn init_routes() -> Router<Repo> {
         )
         .nest("/mappools", mappools::init_routes())
         .nest("/matches", matches::init_routes())
-        // .nest(":tournament_id/players", players::init_routes())
+        .nest("/:tournament_id/players", players::init_routes())
         .nest("/:tournament_id/staff", staff::init_routes())
     // .nest(":tournament_id/teams", teams::init_routes())
 }
@@ -144,7 +144,11 @@ pub async fn tournaments_delete(
     State(repo): State<Repo>,
     Path(tournament_id): Path<String>,
 ) -> ApiResult<()> {
-    let tournament = repo.osu.tournaments.delete_match_by_id(&tournament_id).await;
+    let tournament = repo
+        .osu
+        .tournaments
+        .delete_match_by_id(&tournament_id)
+        .await;
 
     let tournament = match convert_result(tournament, "tournament") {
         Ok(value) => value,
