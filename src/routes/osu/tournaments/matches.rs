@@ -5,10 +5,12 @@ use axum::{
     routing::{delete, get, post, put},
     Json, Router,
 };
+use bson::oid::ObjectId;
+use bson::serde_helpers::hex_string_as_object_id;
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
-use crate::models::osu::tournaments::OsuMatch;
+use crate::models::osu::tournaments::{OsuMappool, OsuMatch, OsuTeam};
 use crate::models::tournaments::MatchInfo;
 use crate::repository::{to_object_id, Repo};
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
@@ -19,87 +21,191 @@ pub fn init_routes() -> Router<Repo> {
         .route(
             "/:match_id",
             get(matches_get)
-                .patch(matches_modify)
+                .patch(matches_update)
                 .delete(matches_delete),
         )
+}
+
+/// This model is used only for REST APIs response
+/// It contains all the information about an osu!match and limit some.
+/// However, DO NOT USE THIS MODEL FOR ANYTHING ELSE, ESPECIALLY NOT FOR DATABASE
+#[derive(Serialize, Deserialize, Clone)]
+pub struct PublicOsuMatch {
+    #[serde(flatten)]
+    pub info: MatchInfo,
+
+    pub mappool: OsuMappool,
+
+    pub blue_team: OsuTeam,
+    pub red_team: OsuTeam,
+
+    pub osu_match_id: i64,
+}
+
+async fn to_public(repo: Repo, original: OsuMatch) -> Result<PublicOsuMatch, ApiError> {
+    let mappool = match original.mappool {
+        Some(ref id) => {
+            let mappool = repo
+                .osu
+                .tournaments
+                .find_mappool(doc! { "_id": id })
+                .await;
+
+            match convert_result(mappool, "mappool") {
+                Ok(value) => value,
+                Err(e) => return Err(e),
+            }
+        },
+        None => return Err(ApiError::InternalServerError),
+    };
+
+    let tournament = match original.info.tournament {
+        Some(ref id) => {
+            let tournament = repo
+                .osu
+                .tournaments
+                .find_tournament(doc! { "_id": id })
+                .await;
+
+            match convert_result(tournament, "tournament") {
+                Ok(value) => value,
+                Err(e) => return Err(e),
+            }
+        },
+        None => return Err(ApiError::InternalServerError),
+    };
+
+    Ok(PublicOsuMatch {
+        info: original.info,
+        mappool,
+        blue_team: tournament.get_team(original.blue_team.unwrap()).await.unwrap().1,
+        red_team: tournament.get_team(original.red_team.unwrap()).await.unwrap().1,
+        osu_match_id: original.osu_match_id,
+    })
 }
 
 pub async fn matches_get(
     State(repo): State<Repo>,
     Path(match_id): Path<String>,
-) -> ApiResult<OsuMatch> {
-    let game_match = repo.osu.tournaments.find_match_by_id(&match_id).await;
-
-    let game_match = match convert_result(game_match, "match") {
+) -> ApiResult<PublicOsuMatch> {
+    let osu_match = repo.osu.tournaments.find_match_by_id(&match_id).await;
+    let osu_match = match convert_result(osu_match, "match") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
+    let osu_match = match to_public(repo, osu_match).await {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
-        .body(game_match))
+        .body(osu_match))
 }
 
-pub async fn matches_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuMatch>> {
-    let game_matches = repo.osu.tournaments.list_matches().await;
+pub async fn matches_list(State(repo): State<Repo>) -> ApiResult<Vec<PublicOsuMatch>> {
+    let osu_matches = repo.osu.tournaments.list_matches().await;
 
-    let game_matches = match convert_result(game_matches, "matches") {
+    let osu_matches = match convert_result(osu_matches, "matches") {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
 
-    if game_matches.is_empty() {
+    if osu_matches.is_empty() {
         return Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT));
+    }
+
+    let mut result = Vec::new();
+
+    for osu_match in osu_matches {
+        let osu_match = match to_public(repo.clone(), osu_match).await {
+            Ok(value) => value,
+            Err(e) => return Err(e),
+        };
+
+        result.push(osu_match);
     }
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
-        .body(game_matches))
+        .body(result))
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Deserialize)]
 pub struct MatchCreationData {
     pub title: String,
+
+    pub mappool_id: Option<String>,
 }
 
 pub async fn matches_create(
     State(repo): State<Repo>,
     Json(data): Json<MatchCreationData>,
-) -> ApiResult<OsuMatch> {
-    let mut new_match = OsuMatch::default();
-    new_match.info.title = data.title;
+) -> ApiResult<PublicOsuMatch> {
+    let mut osu_match = OsuMatch::default();
+    osu_match.info.title = data.title;
 
-    let game_match = repo
+    let osu_match = repo
         .osu
         .tournaments
-        .create_match(new_match)
+        .create_match(osu_match)
         .await;
 
-    let game_match = match convert_result(game_match, "match") {
+    let osu_match = match convert_result(osu_match, "match") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
+
+    let osu_match = match to_public(repo, osu_match).await {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::CREATED)
-        .body(game_match))
+        .body(osu_match))
 }
 
-pub async fn matches_modify() -> ApiResult<OsuMatch> {
-    todo!();
+#[derive(Serialize, Deserialize)]
+pub struct MatchUpdateData {
+    pub title: Option<String>,
+
+    // #[serde(with = "hex_string_as_object_id")]
+    // pub mappool: Option<String>,
+}
+
+pub async fn matches_update(
+    State(repo): State<Repo>,
+    Path(match_id): Path<String>,
+    Json(data): Json<MatchUpdateData>,
+) -> ApiResult<OsuMatch> {
+    let osu_match = repo
+        .osu
+        .tournaments
+        .update_match_by_id(&match_id, bson::to_document(&data).unwrap())
+        .await;
+
+    let osu_match = match convert_result(osu_match, "match") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
+
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(osu_match))
 }
 
 pub async fn matches_delete(
     State(repo): State<Repo>,
     Path(match_id): Path<String>,
-) -> ApiResult<OsuMatch> {
-    let game_match = repo
+) -> ApiResult<PublicOsuMatch> {
+    let osu_match = repo
         .osu
         .tournaments
         .delete_match_by_id(&match_id)
         .await;
 
-    let game_match = match convert_result(game_match, "match") {
+    let osu_match = match convert_result(osu_match, "match") {
         Ok(value) => value,
         Err(e) => return Err(e),
     };

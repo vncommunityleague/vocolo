@@ -2,7 +2,8 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::BeatmapMod;
-use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentTeamInfo};
+use crate::models::tournaments::{MappoolInfo, MatchInfo, TournamentInfo, TournamentTeamInfo};
+use crate::repository::to_object_id;
 
 pub enum TeamFormat {}
 
@@ -32,8 +33,7 @@ pub struct OsuMap {
 /// An osu!mappool is represented here
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMappool {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    pub info: MappoolInfo,
 
     /// The osu!mappool's name
     pub name: String,
@@ -110,9 +110,13 @@ pub struct OsuTournament {
 }
 
 impl OsuTournament {
-    pub async fn get_team(&self, name: String) -> Option<(usize, OsuTeam)> {
+    pub async fn get_team_by_raw_id(&self, id: &str) -> Option<(usize, OsuTeam)> {
+        self.get_team(to_object_id(id)).await
+    }
+    
+    pub async fn get_team(&self, id: ObjectId) -> Option<(usize, OsuTeam)> {
         for (i, team) in self.teams.iter().enumerate() {
-            if team.info.name == name {
+            if team.info.id == Some(id.clone()) {
                 return Some((i, team.clone()));
             }
         }

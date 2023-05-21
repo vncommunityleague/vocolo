@@ -287,7 +287,7 @@ impl OsuTournamentRepo {
         // TODO: actually fix this
         // let id = &game_match.info.id;
         // let check_game_match = self.find_match_by_id(slug).await;
-        // 
+        //
         // if check_game_match.is_ok() && check_tournament.unwrap().is_some() {
         //     return Err(RepoError::Duplicate(slug.to_string()));
         // }
@@ -302,6 +302,26 @@ impl OsuTournamentRepo {
             Ok(_) => Ok(self.find_match_by_id("").await.unwrap()),
             Err(e) => Err(RepoError::Internal(e)),
         };
+    }
+
+    pub async fn update_match_by_id(
+        &self,
+        id: &str,
+        update: Document,
+    ) -> RepoResult<OsuMatch> {
+        self.update_match(doc! { "_id": to_object_id(id) }, update).await
+    }
+
+    pub async fn update_match(&self, filter: Document, update: Document) -> RepoResult<OsuMatch> {
+        let query_result = self
+            .matches
+            .find_one_and_update(filter, update, None)
+            .await;
+
+        match query_result {
+            Ok(mappool) => Ok(mappool),
+            Err(e) => return Err(RepoError::Internal(e)),
+        }
     }
 
     pub async fn delete_match_by_id(&self, id: &str) -> RepoResult<OsuMatch> {
