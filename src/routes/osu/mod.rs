@@ -1,5 +1,5 @@
-use axum::Router;
 use crate::repository::Repo;
+use axum::Router;
 
 mod tournaments;
 

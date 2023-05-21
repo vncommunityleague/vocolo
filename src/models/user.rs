@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::models::ModelAttribute;
+use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Role {

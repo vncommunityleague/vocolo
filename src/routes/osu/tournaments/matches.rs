@@ -5,8 +5,6 @@ use axum::{
     routing::{delete, get, post, put},
     Json, Router,
 };
-use bson::oid::ObjectId;
-use bson::serde_helpers::hex_string_as_object_id;
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
@@ -45,17 +43,13 @@ pub struct PublicOsuMatch {
 async fn to_public(repo: Repo, original: OsuMatch) -> Result<PublicOsuMatch, ApiError> {
     let mappool = match original.mappool {
         Some(ref id) => {
-            let mappool = repo
-                .osu
-                .tournaments
-                .find_mappool(doc! { "_id": id })
-                .await;
+            let mappool = repo.osu.tournaments.find_mappool(doc! { "_id": id }).await;
 
             match convert_result(mappool, "mappool") {
                 Ok(value) => value,
                 Err(e) => return Err(e),
             }
-        },
+        }
         None => return Err(ApiError::InternalServerError),
     };
 
@@ -71,15 +65,23 @@ async fn to_public(repo: Repo, original: OsuMatch) -> Result<PublicOsuMatch, Api
                 Ok(value) => value,
                 Err(e) => return Err(e),
             }
-        },
+        }
         None => return Err(ApiError::InternalServerError),
     };
 
     Ok(PublicOsuMatch {
         info: original.info,
         mappool,
-        blue_team: tournament.get_team(original.blue_team.unwrap()).await.unwrap().1,
-        red_team: tournament.get_team(original.red_team.unwrap()).await.unwrap().1,
+        blue_team: tournament
+            .get_team(to_object_id(original.blue_team.unwrap().as_ref()))
+            .await
+            .unwrap()
+            .1,
+        red_team: tournament
+            .get_team(to_object_id(original.red_team.unwrap().as_ref()))
+            .await
+            .unwrap()
+            .1,
         osu_match_id: original.osu_match_id,
     })
 }
@@ -126,9 +128,7 @@ pub async fn matches_list(State(repo): State<Repo>) -> ApiResult<Vec<PublicOsuMa
         result.push(osu_match);
     }
 
-    Ok(ApiResponse::new()
-        .status_code(StatusCode::OK)
-        .body(result))
+    Ok(ApiResponse::new().status_code(StatusCode::OK).body(result))
 }
 
 #[derive(Deserialize)]
@@ -145,11 +145,7 @@ pub async fn matches_create(
     let mut osu_match = OsuMatch::default();
     osu_match.info.title = data.title;
 
-    let osu_match = repo
-        .osu
-        .tournaments
-        .create_match(osu_match)
-        .await;
+    let osu_match = repo.osu.tournaments.create_match(osu_match).await;
 
     let osu_match = match convert_result(osu_match, "match") {
         Ok(value) => value,
@@ -170,8 +166,7 @@ pub async fn matches_create(
 pub struct MatchUpdateData {
     pub title: Option<String>,
 
-    // #[serde(with = "hex_string_as_object_id")]
-    // pub mappool: Option<String>,
+    pub mappool: Option<String>,
 }
 
 pub async fn matches_update(
@@ -199,11 +194,7 @@ pub async fn matches_delete(
     State(repo): State<Repo>,
     Path(match_id): Path<String>,
 ) -> ApiResult<PublicOsuMatch> {
-    let osu_match = repo
-        .osu
-        .tournaments
-        .delete_match_by_id(&match_id)
-        .await;
+    let osu_match = repo.osu.tournaments.delete_match_by_id(&match_id).await;
 
     let osu_match = match convert_result(osu_match, "match") {
         Ok(value) => value,

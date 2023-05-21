@@ -79,10 +79,7 @@ impl OsuTournamentRepo {
     }
 
     /// Creates a new [`OsuTournament`] and returns its id.
-    pub async fn create_tournament(
-        &self,
-        tournament: OsuTournament,
-    ) -> RepoResult<OsuTournament> {
+    pub async fn create_tournament(&self, tournament: OsuTournament) -> RepoResult<OsuTournament> {
         let slug = &tournament.info.slug.clone();
         let check_tournament = self.find_tournament_by_id_or_slug(slug).await;
 
@@ -227,15 +224,11 @@ impl OsuTournamentRepo {
     }
 
     pub async fn delete_mappool_by_id(&self, id: &str) -> RepoResult<OsuMappool> {
-        self.delete_mappool(doc! { "_id": to_object_id(id) })
-            .await
+        self.delete_mappool(doc! { "_id": to_object_id(id) }).await
     }
 
     pub async fn delete_mappool(&self, filter: Document) -> RepoResult<OsuMappool> {
-        let query_result = self
-            .mappools
-            .find_one_and_delete(filter, None)
-            .await;
+        let query_result = self.mappools.find_one_and_delete(filter, None).await;
 
         return match query_result {
             Ok(mappool) => Ok(mappool),
@@ -299,24 +292,21 @@ impl OsuTournamentRepo {
             .await;
 
         return match query_result {
-            Ok(_) => Ok(self.find_match_by_id("").await.unwrap()),
+            Ok(value) => Ok(self
+                .find_match(doc! { "_id": value.inserted_id })
+                .await
+                .unwrap()),
             Err(e) => Err(RepoError::Internal(e)),
         };
     }
 
-    pub async fn update_match_by_id(
-        &self,
-        id: &str,
-        update: Document,
-    ) -> RepoResult<OsuMatch> {
-        self.update_match(doc! { "_id": to_object_id(id) }, update).await
+    pub async fn update_match_by_id(&self, id: &str, update: Document) -> RepoResult<OsuMatch> {
+        self.update_match(doc! { "_id": to_object_id(id) }, update)
+            .await
     }
 
     pub async fn update_match(&self, filter: Document, update: Document) -> RepoResult<OsuMatch> {
-        let query_result = self
-            .matches
-            .find_one_and_update(filter, update, None)
-            .await;
+        let query_result = self.matches.find_one_and_update(filter, update, None).await;
 
         match query_result {
             Ok(mappool) => Ok(mappool),
@@ -325,15 +315,11 @@ impl OsuTournamentRepo {
     }
 
     pub async fn delete_match_by_id(&self, id: &str) -> RepoResult<OsuMatch> {
-        self.delete_match(doc! { "_id": to_object_id(id) })
-            .await
+        self.delete_match(doc! { "_id": to_object_id(id) }).await
     }
 
     pub async fn delete_match(&self, filter: Document) -> RepoResult<OsuMatch> {
-        let query_result = self
-            .matches
-            .find_one_and_delete(filter, None)
-            .await;
+        let query_result = self.matches.find_one_and_delete(filter, None).await;
 
         return match query_result {
             Ok(mappool) => Ok(mappool),

@@ -15,10 +15,7 @@ use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("/", post(staff_add))
-        .route(
-            "/:user_id",
-            put(staff_modify).delete(staff_delete),
-        )
+        .route("/:user_id", put(staff_modify).delete(staff_delete))
 }
 
 #[derive(Serialize, Deserialize, Clone)]

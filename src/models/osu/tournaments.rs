@@ -8,17 +8,9 @@ use crate::repository::to_object_id;
 pub enum TeamFormat {}
 
 /// An osu!team is represented here
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuTeam {
     pub info: TournamentTeamInfo,
-}
-
-impl Default for OsuTeam {
-    fn default() -> Self {
-        Self {
-            info: TournamentTeamInfo::default(),
-        }
-    }
 }
 
 /// An osu!map is represented here
@@ -57,31 +49,19 @@ impl OsuMappool {
 pub struct OsuMatchMap {}
 
 // Tournament
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuMatch {
     pub info: MatchInfo,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mappool: Option<ObjectId>,
+    pub mappool: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blue_team: Option<ObjectId>,
+    pub blue_team: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub red_team: Option<ObjectId>,
+    pub red_team: Option<String>,
 
     pub osu_match_id: i64,
-}
-
-impl Default for OsuMatch {
-    fn default() -> Self {
-        Self {
-            info: MatchInfo::default(),
-            mappool: None,
-            blue_team: None,
-            red_team: None,
-            osu_match_id: -1,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -106,17 +86,17 @@ pub struct OsuTournament {
 
     /// The current stage of the tournament
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_stage: Option<ObjectId>,
+    pub current_stage: Option<String>,
 }
 
 impl OsuTournament {
     pub async fn get_team_by_raw_id(&self, id: &str) -> Option<(usize, OsuTeam)> {
         self.get_team(to_object_id(id)).await
     }
-    
+
     pub async fn get_team(&self, id: ObjectId) -> Option<(usize, OsuTeam)> {
         for (i, team) in self.teams.iter().enumerate() {
-            if team.info.id == Some(id.clone()) {
+            if team.info.id == Some(id) {
                 return Some((i, team.clone()));
             }
         }

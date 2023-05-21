@@ -1,7 +1,7 @@
-use std::net::{ToSocketAddrs};
+use std::net::ToSocketAddrs;
 
-use axum::{Router, ServiceExt};
 use axum::routing::get;
+use axum::{Router, ServiceExt};
 
 use util::constants::EnvironmentVariable;
 
@@ -24,12 +24,13 @@ async fn main() {
         .merge(routes::init_routes())
         .with_state(repo);
 
-    axum::Server::bind(&EnvironmentVariable::ServerHost
+    axum::Server::bind(
+        &EnvironmentVariable::ServerHost
             .value()
             .to_socket_addrs()
             .unwrap()
             .next()
-            .unwrap()
+            .unwrap(),
     )
     .serve(app.into_make_service())
     .await

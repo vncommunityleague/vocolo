@@ -5,9 +5,9 @@ use strum_macros::{Display, EnumString};
 
 #[derive(Display)]
 pub enum Database {
-    // #[display(fmt = "vcl")]
+    #[strum(serialize = "vcl")]
     Main,
-    // #[display(fmt = "vcl_osu")]
+    #[strum(serialize = "vcl_osu")]
     Osu,
 }
 
