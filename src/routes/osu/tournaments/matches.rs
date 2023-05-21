@@ -12,7 +12,7 @@ use crate::models::osu::tournaments::OsuMatch;
 use crate::repository::{to_object_id, Repo};
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("", get(matches_list).post(matches_create))
         .route(

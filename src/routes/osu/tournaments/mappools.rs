@@ -14,7 +14,7 @@ use crate::models::osu::BeatmapMod;
 use crate::repository::{to_object_id, Repo};
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("", get(mappools_list).post(mappools_create))
         .route(
@@ -135,15 +135,16 @@ pub async fn maps_remove_map(
         Err(e) => return Err(e),
     };
 
-    let map_pos = mappool
-        .get_map_position(map_id.parse::<i64>().unwrap())
+    let map = mappool
+        .get_map(map_id.parse::<i64>().unwrap())
         .await;
 
-    if map_pos.is_none() {
-        return Err(ApiError::MapNotFound);
-    }
+    let (map_pos, map_id) = match map {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("beatmap".to_string())),
+    };
 
-    mappool.maps.remove(map_pos.unwrap());
+    mappool.maps.remove(map_pos);
 
     // TODO: Replace mappool
 

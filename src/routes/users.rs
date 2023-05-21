@@ -10,7 +10,7 @@ use crate::models::user::User;
 use crate::repository::Repo;
 use crate::routes::{ApiResponse, ApiResult};
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("/me", get(user_current))
         .route("/:id", get(user_get))

@@ -15,7 +15,7 @@ use crate::routes::{ApiError, ApiResponse, ApiResult};
 use crate::util::auth;
 use crate::util::auth::AuthType;
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("/discord", get(discord_login))
         .route("/discord/callback", get(discord_login_callback))

@@ -5,7 +5,7 @@ use bytes::{BufMut, BytesMut};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::repository::{RepoError, RepoResult};
+use crate::repository::{Repo, RepoError, RepoResult};
 
 mod auth;
 mod osu;
@@ -13,7 +13,7 @@ mod users;
 
 pub type ApiResult<T> = Result<ApiResponse<T>, ApiError>;
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         // General routes
         .nest("authorize", auth::init_routes())

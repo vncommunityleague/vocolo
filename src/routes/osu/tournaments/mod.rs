@@ -16,7 +16,7 @@ mod staff;
 // mod stages;
 // mod teams;
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("", get(tournaments_list).post(tournaments_create))
         .route(

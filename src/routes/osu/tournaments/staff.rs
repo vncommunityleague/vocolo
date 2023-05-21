@@ -12,7 +12,7 @@ use crate::models::user::Role;
 use crate::repository::Repo;
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
-pub fn init_routes() -> Router {
+pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route(":tournament_id/staff", post(staff_add))
         .route(

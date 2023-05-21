@@ -1,3 +1,4 @@
+use mongodb::bson::{doc, Document};
 use mongodb::bson::oid::ObjectId;
 use mongodb::Client;
 use thiserror::Error;

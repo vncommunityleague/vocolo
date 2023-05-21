@@ -27,8 +27,6 @@ pub struct OsuMappool {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
 
-    /// The osu!mappool's slug
-    pub slug: String,
     /// The osu!mappool's name
     pub name: String,
     /// The osu!mappool's maps
@@ -36,20 +34,10 @@ pub struct OsuMappool {
 }
 
 impl OsuMappool {
-    pub async fn get_map_position(&self, osu_beatmap_id: i64) -> Option<usize> {
+    pub async fn get_map(&self, osu_beatmap_id: i64) -> Option<(usize, OsuMap)> {
         for (i, map) in self.maps.iter().enumerate() {
             if map.osu_beatmap_id == osu_beatmap_id {
-                return Some(i);
-            }
-        }
-
-        None
-    }
-
-    pub async fn get_map(&self, osu_beatmap_id: i64) -> Option<OsuMap> {
-        for map in &self.maps {
-            if map.osu_beatmap_id == osu_beatmap_id {
-                return Some(map.clone());
+                return Some((i, map.clone()));
             }
         }
 
@@ -61,9 +49,11 @@ impl OsuMappool {
 pub struct OsuMatchMap {}
 
 // Tournament
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMatch {
     pub info: MatchInfo,
+
+    pub mappool: Option<ObjectId>,
 
     pub blue_team: OsuTeam,
     pub red_team: OsuTeam,
@@ -71,12 +61,10 @@ pub struct OsuMatch {
     pub osu_match_id: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuTournamentStage {
     pub slug: String,
     pub name: String,
-
-    pub mappool: Option<ObjectId>,
 
     pub matches: Vec<OsuMatch>,
 }
@@ -89,6 +77,9 @@ pub struct OsuTournament {
     // pub game_mode: GameMode,
     #[serde(default)]
     pub teams: Vec<OsuTeam>,
+
+    #[serde(default)]
+    pub players: Vec<String>,
 
     /// The current stage of the tournament
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -104,15 +95,5 @@ impl OsuTournament {
         }
 
         None
-    }
-
-    pub async fn players(&self) -> Vec<String> {
-        let mut players = Vec::new();
-
-        for team in &self.teams {
-            players.append(&mut team.info.players.clone());
-        }
-
-        players
     }
 }
