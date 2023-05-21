@@ -1,6 +1,6 @@
+use crate::models::ModelAttribute;
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use crate::models::{ModelAttribute};
 
 use crate::models::user::Role;
 
@@ -14,7 +14,7 @@ pub struct TournamentStaff {
 pub struct TournamentTeamInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
-    
+
     pub name: String,
 
     pub captain: String,
@@ -25,9 +25,9 @@ pub struct TournamentTeamInfo {
     pub players: Vec<String>,
 }
 
-
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MappoolInfo {
+    #[serde(flatten)]
     pub model_attribute: ModelAttribute,
 }
 
