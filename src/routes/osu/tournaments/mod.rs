@@ -27,7 +27,7 @@ pub fn init_routes() -> Router<Repo> {
         )
         .nest("/mappools", mappools::init_routes())
         .nest("/matches", matches::init_routes())
-        .nest("/:tournament_id/players", players::init_routes())
+        .nest("/:tournament_id", players::init_routes())
         .nest("/:tournament_id/staff", staff::init_routes())
     // .nest(":tournament_id/teams", teams::init_routes())
 }
