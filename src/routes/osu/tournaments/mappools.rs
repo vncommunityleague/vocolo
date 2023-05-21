@@ -56,8 +56,32 @@ pub async fn mappools_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuMappool
         .body(mappools))
 }
 
-pub async fn mappools_create() -> ApiResult<OsuMappool> {
-    todo!();
+pub async fn mappools_create(
+    State(repo): State<Repo>,
+    Json(data): Json<AddMappoolRequest>,
+) -> ApiResult<OsuMappool> {
+    let new_mappool = repo
+        .osu
+        .tournaments
+        .create_mappool(OsuMappool {
+            id: None,
+            name: data.name,
+            maps: data.maps,
+        })
+        .await;
+
+    let mappool = match convert_result(new_mappool, "mappool") {
+        Ok(value) => value,
+        Err(e) => return Err(e),
+    };
+
+    Ok(ApiResponse::new().status_code(StatusCode::OK).body(mappool))
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct AddMappoolRequest {
+    name: String,
+    maps: Vec<OsuMap>,
 }
 
 pub async fn mappools_modify() -> ApiResult<OsuMappool> {
@@ -68,11 +92,7 @@ pub async fn mappools_delete(
     State(repo): State<Repo>,
     Path(mappool_id): Path<String>,
 ) -> ApiResult<()> {
-    let mappool = repo
-        .osu
-        .tournaments
-        .delete_mappool_by_id(&mappool_id)
-        .await;
+    let mappool = repo.osu.tournaments.delete_mappool_by_id(&mappool_id).await;
 
     let mappool = match convert_result(mappool, "mappool") {
         Ok(value) => value,
@@ -93,11 +113,7 @@ pub async fn mappools_add_map(
     Path(mappool_id): Path<String>,
     Json(data): Json<AddMapRequest>,
 ) -> ApiResult<()> {
-    let mappool = repo
-        .osu
-        .tournaments
-        .find_mappool_by_id(&mappool_id)
-        .await;
+    let mappool = repo.osu.tournaments.find_mappool_by_id(&mappool_id).await;
 
     let mut mappool = match convert_result(mappool, "mappool") {
         Ok(value) => value,
@@ -118,20 +134,14 @@ pub async fn maps_remove_map(
     State(repo): State<Repo>,
     Path((mappool_id, map_id)): Path<(String, String)>,
 ) -> ApiResult<()> {
-    let mappool = repo
-        .osu
-        .tournaments
-        .find_mappool_by_id(&mappool_id)
-        .await;
+    let mappool = repo.osu.tournaments.find_mappool_by_id(&mappool_id).await;
 
     let mut mappool = match convert_result(mappool, "mappool") {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
 
-    let map = mappool
-        .get_map(map_id.parse::<i64>().unwrap())
-        .await;
+    let map = mappool.get_map(map_id.parse::<i64>().unwrap()).await;
 
     let (map_pos, map_id) = match map {
         Some(value) => value,
