@@ -1,9 +1,12 @@
+use std::str::FromStr;
+
 use axum::extract::State;
 use axum::{
     extract::{Path, Query},
     routing::{delete, get, post, put},
     Json, Router,
 };
+use bson::oid::ObjectId;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
@@ -59,7 +62,9 @@ pub async fn players_team_get(
         Err(e) => return Err(e),
     };
 
-    let team = tournament.get_team(team_id.to_string()).await;
+    let team = tournament
+        .get_team(ObjectId::from_str(&team_id).unwrap())
+        .await;
 
     if team.is_none() {
         return Err(ApiError::NotFound("team".to_string()));
@@ -93,7 +98,9 @@ pub async fn players_team_add(
         Err(e) => return Err(e),
     };
 
-    let team = tournament.get_team(team_id.to_string()).await;
+    let team = tournament
+        .get_team(ObjectId::from_str(&team_id).unwrap())
+        .await;
 
     if team.is_none() {
         return Err(ApiError::NotFound("team".to_string()));
