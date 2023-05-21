@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::{OsuMap, OsuMappool};
 use crate::models::osu::BeatmapMod;
+use crate::models::tournaments::MappoolInfo;
+use crate::models::{ModelAttribute, Timestamp};
 use crate::repository::Repo;
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
@@ -64,7 +66,12 @@ pub async fn mappools_create(
         .osu
         .tournaments
         .create_mappool(OsuMappool {
-            id: None,
+            info: MappoolInfo {
+                model_attribute: ModelAttribute {
+                    id: None,
+                    timestamp: Timestamp::default(),
+                },
+            },
             name: data.name,
             maps: data.maps,
         })
@@ -122,7 +129,7 @@ pub async fn mappools_add_map(
 
     mappool.maps.push(OsuMap {
         osu_beatmap_id: data.map_id.parse::<i64>().unwrap(),
-        modifier: BeatmapMod::from_str(&data.modifier).unwrap(),
+        modifier: vec![BeatmapMod::from_str(&data.modifier).unwrap()],
     });
 
     // TODO: Replace mappool
