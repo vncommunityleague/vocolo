@@ -11,12 +11,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::{OsuMap, OsuMappool};
 use crate::models::osu::BeatmapMod;
-use crate::repository::{to_object_id, Repo};
+use crate::repository::Repo;
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
-        .route("", get(mappools_list).post(mappools_create))
+        .route("/", get(mappools_list).post(mappools_create))
         .route(
             "/:mappool_id",
             get(mappools_get)
@@ -71,9 +71,7 @@ pub async fn mappools_delete(
     let mappool = repo
         .osu
         .tournaments
-        .delete_tournament(doc! {
-            "_id": to_object_id(&mappool_id)
-        })
+        .delete_mappool_by_id(&mappool_id)
         .await;
 
     let mappool = match convert_result(mappool, "mappool") {
@@ -98,9 +96,7 @@ pub async fn mappools_add_map(
     let mappool = repo
         .osu
         .tournaments
-        .find_mappool(doc! {
-            "_id": to_object_id(&mappool_id)
-        })
+        .find_mappool_by_id(&mappool_id)
         .await;
 
     let mut mappool = match convert_result(mappool, "mappool") {
@@ -125,9 +121,7 @@ pub async fn maps_remove_map(
     let mappool = repo
         .osu
         .tournaments
-        .find_mappool(doc! {
-            "_id": to_object_id(&mappool_id)
-        })
+        .find_mappool_by_id(&mappool_id)
         .await;
 
     let mut mappool = match convert_result(mappool, "mappool") {

@@ -81,28 +81,19 @@ impl OsuTournamentRepo {
     /// Creates a new [`OsuTournament`] and returns its id.
     pub async fn create_tournament(
         &self,
-        slug: String,
-        title: String,
+        tournament: OsuTournament,
     ) -> RepoResult<OsuTournament> {
-        let tournament = self.find_tournament_by_id_or_slug(&slug).await;
+        let slug = &tournament.info.slug.clone();
+        let check_tournament = self.find_tournament_by_id_or_slug(slug).await;
 
-        // TODO: check for existed one
-        // if tournament.is_ok() && tournament.unwrap().is_some() {
-        //     return Err(RepoError::AlreadyExist {
-        //         key: "tournament.slug".to_string(),
-        //     });
-        // }
+        if check_tournament.is_ok() && check_tournament.unwrap().is_some() {
+            return Err(RepoError::Duplicate(slug.to_string()));
+        }
 
         let query_result = self
             .tournaments
             .clone_with_type()
-            .insert_one(
-                doc! {
-                    "slug": &slug,
-                    "title": title,
-                },
-                None,
-            )
+            .insert_one(tournament, None)
             .await;
 
         return match query_result {
@@ -165,6 +156,10 @@ impl OsuTournamentRepo {
 
     pub async fn list_mappools(&self) -> RepoResult<Vec<OsuMappool>> {
         self.find_mappools(doc! {}).await
+    }
+
+    pub async fn find_mappool_by_id(&self, id: &str) -> RepoResult<OsuMappool> {
+        self.find_mappool(doc! { "_id": to_object_id(id) }).await
     }
 
     pub async fn find_mappool(&self, filter: Document) -> RepoResult<OsuMappool> {
@@ -231,10 +226,15 @@ impl OsuTournamentRepo {
         self.find_mappool(doc! {"_id": to_object_id(id)}).await
     }
 
-    pub async fn delete_mappool(&self, id: &str) -> RepoResult<OsuMappool> {
+    pub async fn delete_mappool_by_id(&self, id: &str) -> RepoResult<OsuMappool> {
+        self.delete_mappool(doc! { "_id": to_object_id(id) })
+            .await
+    }
+
+    pub async fn delete_mappool(&self, filter: Document) -> RepoResult<OsuMappool> {
         let query_result = self
             .mappools
-            .find_one_and_delete(doc! {"_id": to_object_id(id)}, None)
+            .find_one_and_delete(filter, None)
             .await;
 
         return match query_result {
@@ -247,6 +247,10 @@ impl OsuTournamentRepo {
 
     pub async fn list_matches(&self) -> RepoResult<Vec<OsuMatch>> {
         self.find_matches(doc! {}).await
+    }
+
+    pub async fn find_match_by_id(&self, id: &str) -> RepoResult<OsuMatch> {
+        self.find_match(doc! { "_id": to_object_id(id) }).await
     }
 
     pub async fn find_match(&self, filter: Document) -> RepoResult<OsuMatch> {
@@ -277,5 +281,43 @@ impl OsuTournamentRepo {
         }
 
         Ok(Some(mappools))
+    }
+
+    pub async fn create_match(&self, game_match: OsuMatch) -> RepoResult<OsuMatch> {
+        // TODO: actually fix this
+        // let id = &game_match.info.id;
+        // let check_game_match = self.find_match_by_id(slug).await;
+        // 
+        // if check_game_match.is_ok() && check_tournament.unwrap().is_some() {
+        //     return Err(RepoError::Duplicate(slug.to_string()));
+        // }
+
+        let query_result = self
+            .matches
+            .clone_with_type()
+            .insert_one(game_match, None)
+            .await;
+
+        return match query_result {
+            Ok(_) => Ok(self.find_match_by_id("").await.unwrap()),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
+    }
+
+    pub async fn delete_match_by_id(&self, id: &str) -> RepoResult<OsuMatch> {
+        self.delete_match(doc! { "_id": to_object_id(id) })
+            .await
+    }
+
+    pub async fn delete_match(&self, filter: Document) -> RepoResult<OsuMatch> {
+        let query_result = self
+            .matches
+            .find_one_and_delete(filter, None)
+            .await;
+
+        return match query_result {
+            Ok(mappool) => Ok(mappool),
+            Err(e) => Err(RepoError::Internal(e)),
+        };
     }
 }

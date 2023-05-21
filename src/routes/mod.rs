@@ -16,23 +16,23 @@ pub type ApiResult<T> = Result<ApiResponse<T>, ApiError>;
 pub fn init_routes() -> Router<Repo> {
     Router::new()
         // General routes
-        .nest("authorize", auth::init_routes())
-        .nest("users", users::init_routes())
+        .nest("/authorize", auth::init_routes())
+        .nest("/users", users::init_routes())
         // Specific game routes
-        .nest("osu", osu::init_routes())
+        .nest("/osu", osu::init_routes())
 }
 
 pub fn convert_result<T>(input: RepoResult<T>, model_type: &str) -> Result<T, ApiError>
 where
     T: Serialize,
 {
-    return match input {
+    match input {
         Ok(value) => match value {
             Some(value) => Ok(value),
             None => Err(ApiError::NotFound(model_type.to_string())),
         },
         Err(e) => Err(ApiError::Database(e)),
-    };
+    }
 }
 
 // Custom error
@@ -57,6 +57,7 @@ pub enum ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        let message = self.to_string();
         let (status_code, error_message) = match self {
             // 4xx errors
             ApiError::Database(RepoError::Duplicate(..)) => (StatusCode::BAD_REQUEST, "duplicate"),
@@ -73,7 +74,7 @@ impl IntoResponse for ApiError {
 
         let body = Json(ApiErrorWrapper {
             error: error_message,
-            description: &self.to_string(),
+            description: &message,
         });
 
         (status_code, body).into_response()
@@ -82,7 +83,7 @@ impl IntoResponse for ApiError {
 
 // Custom Response
 #[derive(Debug)]
-struct ApiResponse<T: Serialize> {
+pub struct ApiResponse<T: Serialize> {
     pub body: Option<T>,
     pub status_code: StatusCode,
 }

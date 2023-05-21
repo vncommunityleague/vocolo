@@ -9,12 +9,13 @@ use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::OsuMatch;
+use crate::models::tournaments::MatchInfo;
 use crate::repository::{to_object_id, Repo};
 use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
-        .route("", get(matches_list).post(matches_create))
+        .route("/", get(matches_list).post(matches_create))
         .route(
             "/:match_id",
             get(matches_get)
@@ -59,20 +60,19 @@ pub async fn matches_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuMatch>> 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MatchCreationData {
     pub title: String,
-    pub slug: String,
 }
 
 pub async fn matches_create(
     State(repo): State<Repo>,
     Json(data): Json<MatchCreationData>,
 ) -> ApiResult<OsuMatch> {
+    let mut new_match = OsuMatch::default();
+    new_match.info.title = data.title;
+
     let game_match = repo
         .osu
         .tournaments
-        .create_match(doc! {
-            "title": data.title,
-            "slug": data.slug,
-        })
+        .create_match(new_match)
         .await;
 
     let game_match = match convert_result(game_match, "match") {
@@ -96,9 +96,7 @@ pub async fn matches_delete(
     let game_match = repo
         .osu
         .tournaments
-        .delete_tournament(doc! {
-            "_id": to_object_id(&match_id)
-        })
+        .delete_match_by_id(&match_id)
         .await;
 
     let game_match = match convert_result(game_match, "match") {

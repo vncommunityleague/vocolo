@@ -1,4 +1,4 @@
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::{ToSocketAddrs};
 
 use axum::{Router, ServiceExt};
 use axum::routing::get;
@@ -21,17 +21,16 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(|| async { "hoaq vu to!" }))
-        .nest("/", routes::init_routes())
+        .merge(routes::init_routes())
         .with_state(repo);
 
-    axum::Server::bind(&SocketAddr::from(
-        EnvironmentVariable::ServerHost
+    axum::Server::bind(&EnvironmentVariable::ServerHost
             .value()
             .to_socket_addrs()
             .unwrap()
             .next()
-            .unwrap(),
-    ))
+            .unwrap()
+    )
     .serve(app.into_make_service())
     .await
     .unwrap();

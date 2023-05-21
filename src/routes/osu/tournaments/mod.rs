@@ -18,17 +18,17 @@ mod staff;
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
-        .route("", get(tournaments_list).post(tournaments_create))
+        .route("/", get(tournaments_list).post(tournaments_create))
         .route(
-            ":tournament_id",
+            "/:tournament_id",
             get(tournaments_get)
                 .patch(tournaments_modify)
                 .delete(tournaments_delete),
         )
-        .nest(":tournament_id/mappools", mappools::init_routes())
-        .nest(":tournament_id/matches", matches::init_routes())
+        .nest("/mappools", mappools::init_routes())
+        .nest("/matches", matches::init_routes())
         // .nest(":tournament_id/players", players::init_routes())
-        .nest(":tournament_id/staff", staff::init_routes())
+        .nest("/:tournament_id/staff", staff::init_routes())
     // .nest(":tournament_id/teams", teams::init_routes())
 }
 
@@ -80,20 +80,21 @@ pub async fn tournaments_create(
     State(repo): State<Repo>,
     Json(data): Json<TournamentCreateRequest>,
 ) -> ApiResult<OsuTournament> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .create_tournament(data.slug.clone(), data.title.clone())
-        .await;
-
-    let tournament = match convert_result(tournament, "tournament") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-
-    Ok(ApiResponse::new()
-        .status_code(StatusCode::CREATED)
-        .body(tournament))
+    todo!()
+    // let tournament = repo
+    //     .osu
+    //     .tournaments
+    //     .create_tournament(data.slug.clone(), data.title.clone())
+    //     .await;
+    //
+    // let tournament = match convert_result(tournament, "tournament") {
+    //     Ok(value) => value,
+    //     Err(e) => return Err(e),
+    // };
+    //
+    // Ok(ApiResponse::new()
+    //     .status_code(StatusCode::CREATED)
+    //     .body(tournament))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -143,7 +144,7 @@ pub async fn tournaments_delete(
     State(repo): State<Repo>,
     Path(tournament_id): Path<String>,
 ) -> ApiResult<()> {
-    let tournament = repo.osu.tournaments.delete_tournament(&tournament_id).await;
+    let tournament = repo.osu.tournaments.delete_match_by_id(&tournament_id).await;
 
     let tournament = match convert_result(tournament, "tournament") {
         Ok(value) => value,

@@ -12,6 +12,14 @@ pub struct OsuTeam {
     pub info: TournamentTeamInfo,
 }
 
+impl Default for OsuTeam {
+    fn default() -> Self {
+        Self {
+            info: TournamentTeamInfo::default(),
+        }
+    }
+}
+
 /// An osu!map is represented here
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMap {
@@ -59,6 +67,21 @@ pub struct OsuMatch {
     pub red_team: OsuTeam,
 
     pub osu_match_id: i64,
+}
+
+impl Default for OsuMatch {
+    fn default() -> Self {
+        Self {
+            info: MatchInfo {
+                id: None,
+                title: String::new(),
+            },
+            mappool: None,
+            blue_team: OsuTeam::default(),
+            red_team: OsuTeam::default(),
+            osu_match_id: -1,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

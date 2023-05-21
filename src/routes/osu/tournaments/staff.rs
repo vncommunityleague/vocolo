@@ -14,9 +14,9 @@ use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
-        .route(":tournament_id/staff", post(staff_add))
+        .route("/", post(staff_add))
         .route(
-            ":tournament_id/staff/:user_id",
+            "/:user_id",
             put(staff_modify).delete(staff_delete),
         )
 }
