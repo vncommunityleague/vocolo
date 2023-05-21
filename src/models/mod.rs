@@ -1,3 +1,4 @@
+use bson::oid::ObjectId;
 use bson::serde_helpers::bson_datetime_as_rfc3339_string;
 use mongodb::bson::DateTime;
 use serde::{Deserialize, Serialize};
@@ -5,6 +6,14 @@ use serde::{Deserialize, Serialize};
 pub mod osu;
 pub mod tournaments;
 pub mod user;
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct ModelAttribute {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+
+    pub timestamp: Timestamp,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Timestamp {

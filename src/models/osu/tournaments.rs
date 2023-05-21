@@ -2,7 +2,7 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::BeatmapMod;
-use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentStaff, TournamentTeamInfo};
+use crate::models::tournaments::{MatchInfo, TournamentInfo, TournamentTeamInfo};
 
 pub enum TeamFormat {}
 
@@ -26,7 +26,7 @@ pub struct OsuMap {
     /// The osu!map's id
     pub osu_beatmap_id: i64,
     /// The modifier of the map
-    pub modifier: BeatmapMod,
+    pub modifier: Vec<BeatmapMod>,
 }
 
 /// An osu!mappool is represented here
@@ -61,10 +61,13 @@ pub struct OsuMatchMap {}
 pub struct OsuMatch {
     pub info: MatchInfo,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mappool: Option<ObjectId>,
 
-    pub blue_team: OsuTeam,
-    pub red_team: OsuTeam,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blue_team: Option<ObjectId>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub red_team: Option<ObjectId>,
 
     pub osu_match_id: i64,
 }
@@ -72,13 +75,10 @@ pub struct OsuMatch {
 impl Default for OsuMatch {
     fn default() -> Self {
         Self {
-            info: MatchInfo {
-                id: None,
-                title: String::new(),
-            },
+            info: MatchInfo::default(),
             mappool: None,
-            blue_team: OsuTeam::default(),
-            red_team: OsuTeam::default(),
+            blue_team: None,
+            red_team: None,
             osu_match_id: -1,
         }
     }

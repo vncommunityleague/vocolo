@@ -1,6 +1,5 @@
-use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use crate::models::Timestamp;
+use crate::models::{ModelAttribute};
 
 use crate::models::user::Role;
 
@@ -34,29 +33,24 @@ impl Default for TournamentTeamInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MatchInfo {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    #[serde(flatten)]
+    pub model_attribute: ModelAttribute,
 
     pub title: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TournamentInfo {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    #[serde(flatten)]
+    pub model_attribute: ModelAttribute,
 
     pub slug: String,
     pub title: String,
-    // pub created_at: i64,
-    // pub updated_at: i64,
 
     // pub registration_start: i64,
     // pub registration_end: i64,
     #[serde(default)]
     pub staff: Vec<TournamentStaff>,
-
-    #[serde(default)]
-    pub timestamp: Timestamp,
 }

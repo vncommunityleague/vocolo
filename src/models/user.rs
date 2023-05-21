@@ -1,5 +1,5 @@
-use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use crate::models::ModelAttribute;
 
 #[derive(PartialEq, Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Role {
@@ -35,8 +35,9 @@ impl Default for Role {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct User {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    #[serde(flatten)]
+    pub model_attribute: ModelAttribute,
+
     pub discord_id: String,
     pub osu_id: String,
 
