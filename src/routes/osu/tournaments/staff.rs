@@ -1,3 +1,4 @@
+use crate::models::osu::tournaments::OsuTournament;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{
@@ -5,12 +6,13 @@ use axum::{
     routing::{delete, get, post, put},
     Json, Router,
 };
+use bson::doc;
 use serde::{Deserialize, Serialize};
 
-use crate::models::tournaments::TournamentStaff;
-use crate::models::user::Role;
-use crate::repository::Repo;
-use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
+use crate::models::user::{Role, User};
+use crate::repository::model::ModelExt;
+use crate::repository::{to_object_id, Repo};
+use crate::routes::{ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
@@ -21,7 +23,7 @@ pub fn init_routes() -> Router<Repo> {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AddStaffRequest {
     pub id: String,
-    pub roles: Option<Role>,
+    pub roles: Vec<String>,
 }
 
 pub async fn staff_add(
@@ -29,43 +31,44 @@ pub async fn staff_add(
     Path(tournament_id): Path<String>,
     Json(data): Json<AddStaffRequest>,
 ) -> ApiResult<()> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .find_tournament_by_id_or_slug(&tournament_id)
-        .await;
-
-    let mut tournament = match convert_result(tournament, "tournament") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-
-    let user = repo.user.find_user_by_osu_id(&data.id).await;
+    let user = User::find_by_id(repo.user.user_col, &to_object_id(&data.id))
+        .await
+        .map_err(ApiError::Database)?;
 
     if user.is_none() {
         return Err(ApiError::NotFound("user".to_string()));
     }
 
-    let user = user.unwrap();
-    let roles = data.roles.clone().unwrap_or_default();
-
-    tournament.info.staff.push(TournamentStaff {
-        id: user.osu_id,
-        roles: vec![roles],
-    });
-
-    let _ = repo
-        .osu
-        .tournaments
-        .replace_tournament(&tournament_id, tournament)
-        .await;
+    let tournament = OsuTournament::find_one_and_update(
+        repo.osu.tournaments.tournaments_col,
+        doc! {
+            "$or": [
+                {
+                    "_id": to_object_id(&tournament_id)
+                },
+                {
+                    "slug": tournament_id
+                }
+            ]
+        },
+        doc! {
+            "$push": {
+                "info.staff": {
+                    "id": data.id,
+                    "roles": data.roles
+                }
+            }
+        },
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::OK))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EditStaffRequest {
-    pub roles: Option<Role>,
+    pub roles: Option<Vec<String>>,
 }
 
 pub async fn staff_modify(
@@ -73,36 +76,33 @@ pub async fn staff_modify(
     Path((tournament_id, user_id)): Path<(String, String)>,
     Json(data): Json<EditStaffRequest>,
 ) -> ApiResult<()> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .find_tournament_by_id_or_slug(&tournament_id)
-        .await;
+    let user = User::find_by_id(repo.user.user_col, &to_object_id(&user_id))
+        .await
+        .map_err(ApiError::Database)?;
 
-    let mut tournament = match convert_result(tournament, "tournament") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-    let staff = repo.user.find_user_by_osu_id(&user_id).await;
-
-    if staff.is_none() {
-        return Err(ApiError::NotFound("staff".to_string()));
+    if user.is_none() {
+        return Err(ApiError::NotFound("user".to_string()));
     }
 
-    let staff = staff.unwrap();
-    let roles = data.roles.unwrap_or_default();
-
-    for s in tournament.info.staff.iter_mut() {
-        if s.id == staff.osu_id {
-            s.roles.push(roles);
-        }
-    }
-
-    let _ = repo
-        .osu
-        .tournaments
-        .replace_tournament(&tournament_id, tournament)
-        .await;
+    let osu_tournament = OsuTournament::find_one_and_update(
+        repo.osu.tournaments.tournaments_col,
+        doc! {
+            "$or": [
+                {
+                    "_id": to_object_id(&tournament_id)
+                },
+                {
+                    "slug": tournament_id
+                }
+            ],
+            "info.staff.id": user_id
+        },
+        doc! {
+            "$set": {
+                "info.staff.$.roles": data.roles.unwrap_or_default()
+            }
+        },
+    );
 
     Ok(ApiResponse::new().status_code(StatusCode::OK))
 }
@@ -111,35 +111,34 @@ pub async fn staff_delete(
     State(repo): State<Repo>,
     Path((tournament_id, user_id)): Path<(String, String)>,
 ) -> ApiResult<()> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .find_tournament_by_id_or_slug(&tournament_id)
-        .await;
+    let user = User::find_by_id(repo.user.user_col, &to_object_id(&user_id))
+        .await
+        .map_err(ApiError::Database)?;
 
-    let mut tournament = match convert_result(tournament, "tournament") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-    let staff = tournament.info.staff.clone();
-    let mut done = false;
-
-    for (i, s) in staff.iter().enumerate() {
-        if s.id == *user_id {
-            tournament.info.staff.remove(i);
-            done = true;
-        }
+    if user.is_none() {
+        return Err(ApiError::NotFound("user".to_string()));
     }
 
-    if !done {
-        return Err(ApiError::NotFound("staff".to_string()));
-    }
-
-    let _ = repo
-        .osu
-        .tournaments
-        .replace_tournament(&tournament_id, tournament)
-        .await;
+    let tournament = OsuTournament::find_one_and_update(
+        repo.osu.tournaments.tournaments_col,
+        doc! {
+            "$or": [
+                {
+                    "_id": to_object_id(&tournament_id)
+                },
+                {
+                    "slug": tournament_id
+                }
+            ]
+        },
+        doc! {
+            "$pull": {
+                "info.staff": {
+                    "id": user_id
+                }
+            }
+        },
+    );
 
     Ok(ApiResponse::new().status_code(StatusCode::OK))
 }

@@ -12,7 +12,7 @@ use crate::routes::{ApiError, ApiResponse, ApiResult};
 
 mod mappools;
 mod matches;
-mod players;
+// mod players;
 mod staff;
 // mod stages;
 // mod teams;
@@ -28,7 +28,7 @@ pub fn init_routes() -> Router<Repo> {
         )
         .nest("/mappools", mappools::init_routes())
         .nest("/matches", matches::init_routes())
-        .nest("/:tournament_id", players::init_routes())
+        // .nest("/:tournament_id", players::init_routes())
         .nest("/:tournament_id/staff", staff::init_routes())
     // .nest(":tournament_id/teams", teams::init_routes())
 }
@@ -40,8 +40,9 @@ pub async fn tournaments_get(
     let tournament = OsuTournament::find_by_id(
         repo.osu.tournaments.tournaments_col,
         &to_object_id(&tournament_id),
-    ).await
-        .map_err(ApiError::Database)?;
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
     let tournament = match tournament {
         Some(value) => value,
@@ -55,7 +56,9 @@ pub async fn tournaments_get(
 
 // TODO: Add SearchConfig
 pub async fn tournaments_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuTournament>> {
-    let tournaments = OsuTournament::list(repo.osu.tournaments.tournaments_col).await.map_err(ApiError::Database)?;
+    let tournaments = OsuTournament::list(repo.osu.tournaments.tournaments_col)
+        .await
+        .map_err(ApiError::Database)?;
 
     if tournaments.is_empty() {
         return Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT));
@@ -76,21 +79,18 @@ pub async fn tournaments_create(
     State(repo): State<Repo>,
     Json(data): Json<TournamentCreateRequest>,
 ) -> ApiResult<OsuTournament> {
-    todo!()
-    // let tournament = repo
-    //     .osu_old
-    //     .tournaments
-    //     .create_tournament(data.slug.clone(), data.title.clone())
-    //     .await;
-    //
-    // let tournament = match convert_result(tournament, "tournament") {
-    //     Ok(value) => value,
-    //     Err(e) => return Err(e),
-    // };
-    //
-    // Ok(ApiResponse::new()
-    //     .status_code(StatusCode::CREATED)
-    //     .body(tournament))
+    let mut tournament = OsuTournament::default();
+
+    tournament.info.title = data.title.clone();
+    tournament.info.slug = data.slug.clone();
+
+    let tournament = OsuTournament::create(repo.osu.tournaments.tournaments_col, tournament)
+        .await
+        .map_err(ApiError::Database)?;
+
+    Ok(
+        ApiResponse::new().status_code(StatusCode::CREATED), // .body(tournament)
+    )
 }
 
 #[derive(Serialize, Deserialize)]
@@ -109,7 +109,8 @@ pub async fn tournaments_update(
         doc! {"_id": to_object_id(&tournament_id)},
         doc! {"$set": bson::to_document(&data).unwrap()},
     )
-    .await.map_err(ApiError::Database)?;
+    .await
+    .map_err(ApiError::Database)?;
 
     let tournament = match tournament {
         Some(value) => value,
@@ -129,7 +130,8 @@ pub async fn tournaments_delete(
         repo.osu.tournaments.tournaments_col,
         doc! {"_id": to_object_id(&tournament_id)},
     )
-    .await.map_err(ApiError::Database)?;
+    .await
+    .map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }

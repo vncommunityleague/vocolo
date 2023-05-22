@@ -11,10 +11,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::{OsuMap, OsuMappool};
 use crate::models::osu::BeatmapMod;
-use crate::models::tournaments::MappoolInfo;
-use crate::models::{ModelAttribute, Timestamp};
-use crate::repository::Repo;
-use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
+use crate::repository::model::ModelExt;
+use crate::repository::{to_object_id, Repo};
+use crate::routes::{ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
@@ -22,7 +21,7 @@ pub fn init_routes() -> Router<Repo> {
         .route(
             "/:mappool_id",
             get(mappools_get)
-                .patch(mappools_modify)
+                .patch(mappools_update)
                 .delete(mappools_delete),
         )
 }
@@ -31,80 +30,102 @@ pub async fn mappools_get(
     State(repo): State<Repo>,
     Path(mappool_id): Path<String>,
 ) -> ApiResult<OsuMappool> {
-    let mappool = repo.osu.tournaments.find_mappool_by_id(&mappool_id).await;
+    let osu_mappool = OsuMappool::find_by_id(
+        repo.osu.tournaments.mappools_col,
+        &to_object_id(&mappool_id),
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
-    let mappool = match convert_result(mappool, "mappool") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
+    let osu_mappool = match osu_mappool {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("osu_mappool".to_string())),
     };
 
-    Ok(ApiResponse::new().status_code(StatusCode::OK).body(mappool))
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(osu_mappool))
 }
 
 pub async fn mappools_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuMappool>> {
-    let mappools = repo.osu.tournaments.list_mappools().await;
+    let osu_mappools = OsuMappool::list(repo.osu.tournaments.mappools_col)
+        .await
+        .map_err(ApiError::Database)?;
 
-    let mappools = match convert_result(mappools, "mappools") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-
-    if mappools.is_empty() {
+    if osu_mappools.is_empty() {
         return Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT));
     }
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
-        .body(mappools))
+        .body(osu_mappools))
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MappoolCreationRequest {
+    name: String,
+
+    #[serde(default)]
+    maps: Vec<OsuMap>,
 }
 
 pub async fn mappools_create(
     State(repo): State<Repo>,
-    Json(data): Json<AddMappoolRequest>,
+    Json(data): Json<MappoolCreationRequest>,
 ) -> ApiResult<OsuMappool> {
-    let new_mappool = repo
-        .osu
-        .tournaments
-        .create_mappool(OsuMappool {
-            info: MappoolInfo {
-                model_attribute: ModelAttribute {
-                    id: None,
-                    timestamp: Timestamp::default(),
-                },
-            },
-            name: data.name,
-            maps: data.maps,
-        })
-        .await;
+    let mut osu_mappool = OsuMappool::default();
+    osu_mappool.name = data.name;
 
-    let mappool = match convert_result(new_mappool, "mappool") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+    let osu_mappool = OsuMappool::create(repo.osu.tournaments.mappools_col, osu_mappool)
+        .await
+        .map_err(ApiError::Database)?;
 
-    Ok(ApiResponse::new().status_code(StatusCode::OK).body(mappool))
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(osu_mappool))
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct AddMappoolRequest {
-    name: String,
+#[derive(Serialize, Deserialize)]
+pub struct MappoolUpdateRequest {
+    name: Option<String>,
+
+    #[serde(default)]
     maps: Vec<OsuMap>,
 }
 
-pub async fn mappools_modify() -> ApiResult<OsuMappool> {
-    todo!();
+pub async fn mappools_update(
+    State(repo): State<Repo>,
+    Path(mappool_id): Path<String>,
+    Json(data): Json<MappoolCreationRequest>,
+) -> ApiResult<OsuMappool> {
+    let osu_mappool = OsuMappool::find_one_and_update(
+        repo.osu.tournaments.mappools_col,
+        doc! {"_id": to_object_id(&mappool_id)},
+        doc! {"$set": bson::to_document(&data).unwrap()},
+    )
+    .await
+    .map_err(ApiError::Database)?;
+
+    let osu_mappool = match osu_mappool {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("osu_mappool".to_string())),
+    };
+
+    Ok(ApiResponse::new()
+        .status_code(StatusCode::OK)
+        .body(osu_mappool))
 }
 
 pub async fn mappools_delete(
     State(repo): State<Repo>,
     Path(mappool_id): Path<String>,
 ) -> ApiResult<()> {
-    let mappool = repo.osu.tournaments.delete_mappool_by_id(&mappool_id).await;
-
-    let mappool = match convert_result(mappool, "mappool") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+    let _ = OsuMappool::delete_one(
+        repo.osu.tournaments.mappools_col,
+        doc! {"_id": to_object_id(&mappool_id)},
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }
@@ -120,19 +141,20 @@ pub async fn mappools_add_map(
     Path(mappool_id): Path<String>,
     Json(data): Json<AddMapRequest>,
 ) -> ApiResult<()> {
-    let mappool = repo.osu.tournaments.find_mappool_by_id(&mappool_id).await;
-
-    let mut mappool = match convert_result(mappool, "mappool") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-
-    mappool.maps.push(OsuMap {
-        osu_beatmap_id: data.map_id.parse::<i64>().unwrap(),
-        modifier: vec![BeatmapMod::from_str(&data.modifier).unwrap()],
-    });
-
-    // TODO: Replace mappool
+    let _ = OsuMappool::find_one_and_update(
+        repo.osu.tournaments.mappools_col,
+        doc! {"_id": to_object_id(&mappool_id)},
+        doc! {
+            "$push": {
+                "maps": bson::to_document(&OsuMap {
+                    osu_beatmap_id: data.map_id.parse::<i64>().unwrap(),
+                    modifier: vec![BeatmapMod::from_str(&data.modifier).unwrap()],
+                }).unwrap()
+            }
+        },
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }
@@ -141,23 +163,20 @@ pub async fn maps_remove_map(
     State(repo): State<Repo>,
     Path((mappool_id, map_id)): Path<(String, String)>,
 ) -> ApiResult<()> {
-    let mappool = repo.osu.tournaments.find_mappool_by_id(&mappool_id).await;
-
-    let mut mappool = match convert_result(mappool, "mappool") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-
-    let map = mappool.get_map(map_id.parse::<i64>().unwrap()).await;
-
-    let (map_pos, map_id) = match map {
-        Some(value) => value,
-        None => return Err(ApiError::NotFound("beatmap".to_string())),
-    };
-
-    mappool.maps.remove(map_pos);
-
-    // TODO: Replace mappool
+    let _ = OsuMappool::find_one_and_update(
+        repo.osu.tournaments.mappools_col,
+        doc! {"_id": to_object_id(&mappool_id)},
+        doc! {
+            "$pull": {
+                "maps": bson::to_document(&OsuMap {
+                    osu_beatmap_id: map_id.parse::<i64>().unwrap(),
+                    modifier: vec![],
+                }).unwrap()
+            }
+        },
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }

@@ -13,12 +13,24 @@ use serde::Serialize;
 
 #[async_trait]
 pub trait ModelExt {
-    type T: DeserializeOwned + Unpin + Send + Sync;
+    type T: Serialize + DeserializeOwned + Unpin + Send + Sync;
 
     async fn create(col: Collection<Self::T>, mut model: Self::T) -> RepoResult<Self::T> {
-        // model.save(connection, None).await.map_err(Error::Wither)?;
+        // let check_exist = col
+        //     .count_documents(doc! {}, None)
+        //     .await
+        //     .map_err(RepoError::Internal)
+        //     .map(|count| count > 0);
+        //
+        // if check_exist.is_ok() && check_exist.unwrap() {
+        //     return Err(RepoError::Duplicate("".to_string()));
+        // }
 
-        // TODO: Impl this
+        let _ = col
+            .insert_one(&model, None)
+            .await
+            .map(|_| model)
+            .map_err(RepoError::Internal)?;
 
         Ok(model)
     }
@@ -26,7 +38,7 @@ pub trait ModelExt {
     async fn list(col: Collection<Self::T>) -> RepoResult<Vec<Self::T>> {
         Self::find(col, doc! {}, None).await
     }
-    
+
     async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
         Self::find_one(col, doc! { "_id": id }, None).await
     }
@@ -61,7 +73,6 @@ pub trait ModelExt {
     }
 
     async fn find_and_count<O>(
-        &self,
         col: Collection<Self::T>,
         filter: Document,
         options: O,
@@ -165,7 +176,7 @@ pub trait ModelExt {
             .map_err(RepoError::Internal)
     }
 
-    async fn exists(&mut self, col: Collection<Self::T>, filter: Document) -> RepoResult<bool> {
+    async fn exists(col: Collection<Self::T>, filter: Document) -> RepoResult<bool> {
         col.count_documents(filter, None)
             .await
             .map_err(RepoError::Internal)

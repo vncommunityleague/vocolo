@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use bson::doc;
+use bson::{doc, Document};
 use mongodb::bson::oid::ObjectId;
 use mongodb::Collection;
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::osu::BeatmapMod;
 use crate::models::tournaments::{MappoolInfo, MatchInfo, TournamentInfo, TournamentTeamInfo};
 use crate::repository::model::ModelExt;
-use crate::repository::{to_object_id, RepoError, RepoResult};
+use crate::repository::{to_object_id, RepoResult};
 
 pub enum TeamFormat {}
 
@@ -27,7 +27,7 @@ pub struct OsuMap {
 }
 
 /// An osu_old!mappool is represented here
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuMappool {
     pub info: MappoolInfo,
 
@@ -49,6 +49,15 @@ impl OsuMappool {
     }
 }
 
+trait OsuMappoolExt: ModelExt {
+    fn get_map(&self, osu_beatmap_id: i64) -> Option<(usize, OsuMap)>;
+}
+
+#[async_trait]
+impl ModelExt for OsuMappool {
+    type T = OsuMappool;
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuMatchMap {}
 
@@ -68,6 +77,11 @@ pub struct OsuMatch {
     pub osu_match_id: i64,
 }
 
+#[async_trait]
+impl ModelExt for OsuMatch {
+    type T = OsuMatch;
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuTournamentStage {
     pub slug: String,
@@ -76,7 +90,7 @@ pub struct OsuTournamentStage {
     pub matches: Vec<OsuMatch>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuTournament {
     #[serde(flatten)]
     pub info: TournamentInfo,

@@ -8,10 +8,11 @@ use axum::{
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
-use crate::models::osu::tournaments::{OsuMappool, OsuMatch, OsuTeam};
+use crate::models::osu::tournaments::{OsuMappool, OsuMatch, OsuTeam, OsuTournament};
 use crate::models::tournaments::MatchInfo;
+use crate::repository::model::ModelExt;
 use crate::repository::{to_object_id, Repo};
-use crate::routes::{convert_result, ApiError, ApiResponse, ApiResult};
+use crate::routes::{ApiError, ApiResponse, ApiResult};
 
 pub fn init_routes() -> Router<Repo> {
     Router::new()
@@ -41,29 +42,31 @@ pub struct PublicOsuMatch {
 }
 
 async fn to_public(repo: Repo, original: OsuMatch) -> Result<PublicOsuMatch, ApiError> {
-    let mappool = match original.mappool {
+    let osu_mappool = match original.mappool {
         Some(ref id) => {
-            let mappool = repo.osu.tournaments.find_mappool(doc! { "_id": id }).await;
+            let osu_mappool =
+                OsuMappool::find_by_id(repo.osu.tournaments.mappools_col, &to_object_id(&id))
+                    .await
+                    .map_err(ApiError::Database)?;
 
-            match convert_result(mappool, "mappool") {
-                Ok(value) => value,
-                Err(e) => return Err(e),
+            match osu_mappool {
+                Some(value) => value,
+                None => return Err(ApiError::NotFound("osu_mappool".to_string())),
             }
         }
         None => return Err(ApiError::InternalServerError),
     };
 
-    let tournament = match original.info.tournament {
+    let osu_tournament = match original.info.tournament {
         Some(ref id) => {
-            let tournament = repo
-                .osu
-                .tournaments
-                .find_tournament(doc! { "_id": id })
-                .await;
+            let osu_tournament =
+                OsuTournament::find_by_id(repo.osu.tournaments.tournaments_col, id)
+                    .await
+                    .map_err(ApiError::Database)?;
 
-            match convert_result(tournament, "tournament") {
-                Ok(value) => value,
-                Err(e) => return Err(e),
+            match osu_tournament {
+                Some(value) => value,
+                None => return Err(ApiError::NotFound("osu_tournament".to_string())),
             }
         }
         None => return Err(ApiError::InternalServerError),
@@ -71,13 +74,13 @@ async fn to_public(repo: Repo, original: OsuMatch) -> Result<PublicOsuMatch, Api
 
     Ok(PublicOsuMatch {
         info: original.info,
-        mappool,
-        blue_team: tournament
+        mappool: osu_mappool,
+        blue_team: osu_tournament
             .get_team(to_object_id(original.blue_team.unwrap().as_ref()))
             .await
             .unwrap()
             .1,
-        red_team: tournament
+        red_team: osu_tournament
             .get_team(to_object_id(original.red_team.unwrap().as_ref()))
             .await
             .unwrap()
@@ -90,12 +93,19 @@ pub async fn matches_get(
     State(repo): State<Repo>,
     Path(match_id): Path<String>,
 ) -> ApiResult<PublicOsuMatch> {
-    let osu_match = repo.osu.tournaments.find_match_by_id(&match_id).await;
-    let osu_match = match convert_result(osu_match, "match") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
+    let osu_match = OsuMatch::find_by_id(
+        repo.clone().osu.tournaments.matches_col,
+        &to_object_id(&match_id),
+    )
+    .await
+    .map_err(ApiError::Database)?;
+
+    let osu_match = match osu_match {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("osu_match".to_string())),
     };
-    let osu_match = match to_public(repo, osu_match).await {
+
+    let osu_match = match to_public(repo.clone(), osu_match).await {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
@@ -106,12 +116,9 @@ pub async fn matches_get(
 }
 
 pub async fn matches_list(State(repo): State<Repo>) -> ApiResult<Vec<PublicOsuMatch>> {
-    let osu_matches = repo.osu.tournaments.list_matches().await;
-
-    let osu_matches = match convert_result(osu_matches, "matches") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+    let osu_matches = OsuMatch::list(repo.clone().osu.tournaments.matches_col)
+        .await
+        .map_err(ApiError::Database)?;
 
     if osu_matches.is_empty() {
         return Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT));
@@ -145,14 +152,11 @@ pub async fn matches_create(
     let mut osu_match = OsuMatch::default();
     osu_match.info.title = data.title;
 
-    let osu_match = repo.osu.tournaments.create_match(osu_match).await;
+    let osu_match = OsuMatch::create(repo.clone().osu.tournaments.matches_col, osu_match)
+        .await
+        .map_err(ApiError::Database)?;
 
-    let osu_match = match convert_result(osu_match, "match") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
-
-    let osu_match = match to_public(repo, osu_match).await {
+    let osu_match = match to_public(repo.clone(), osu_match).await {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
@@ -174,15 +178,21 @@ pub async fn matches_update(
     Path(match_id): Path<String>,
     Json(data): Json<MatchUpdateData>,
 ) -> ApiResult<OsuMatch> {
-    let osu_match = repo
-        .osu
-        .tournaments
-        .update_match_by_id(&match_id, bson::to_document(&data).unwrap())
-        .await;
+    let osu_match = OsuMatch::find_one_and_update(
+        repo.osu.tournaments.matches_col,
+        doc! {
+            "_id": to_object_id(&match_id)
+        },
+        doc! {
+            "$set": bson::to_document(&data).unwrap()
+        },
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
-    let osu_match = match convert_result(osu_match, "match") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
+    let osu_match = match osu_match {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("osu_match".to_string())),
     };
 
     Ok(ApiResponse::new()
@@ -193,13 +203,15 @@ pub async fn matches_update(
 pub async fn matches_delete(
     State(repo): State<Repo>,
     Path(match_id): Path<String>,
-) -> ApiResult<PublicOsuMatch> {
-    let osu_match = repo.osu.tournaments.delete_match_by_id(&match_id).await;
-
-    let osu_match = match convert_result(osu_match, "match") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+) -> ApiResult<()> {
+    let _ = OsuMatch::delete_one(
+        repo.osu.tournaments.matches_col,
+        doc! {
+            "_id": to_object_id(&match_id)
+        },
+    )
+    .await
+    .map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }

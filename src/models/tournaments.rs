@@ -42,7 +42,7 @@ pub struct MatchInfo {
     pub tournament: Option<ObjectId>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct TournamentInfo {
     #[serde(flatten)]
     pub model_attribute: ModelAttribute,
@@ -52,6 +52,5 @@ pub struct TournamentInfo {
 
     // pub registration_start: i64,
     // pub registration_end: i64,
-    #[serde(default)]
     pub staff: Vec<TournamentStaff>,
 }

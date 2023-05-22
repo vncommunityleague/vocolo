@@ -8,7 +8,7 @@ use crate::util::constants::Database;
 
 #[derive(Clone)]
 pub struct UserRepo {
-    user_col: Collection<User>,
+    pub user_col: Collection<User>,
 }
 
 impl UserRepo {
