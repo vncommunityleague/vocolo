@@ -50,7 +50,6 @@ pub struct User {
     pub roles: Vec<Role>,
 }
 
-
 #[async_trait]
 impl ModelExt for User {
     type T = User;
@@ -58,14 +57,18 @@ impl ModelExt for User {
     async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
         let hex_id = id.to_hex();
 
-        Self::find_one(col, doc! {
+        Self::find_one(
+            col,
+            doc! {
                 "$or": [
                     { "_id": id },
                     { "discord_id": hex_id },
                     { "osu_id": hex_id },
                 ]
-            }, None
-        ).await
+            },
+            None,
+        )
+        .await
     }
 }
 

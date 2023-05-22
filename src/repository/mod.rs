@@ -23,9 +23,7 @@ pub enum RepoError {
     Internal(#[from] mongodb::error::Error),
 }
 
-pub struct UserRepo {
-    
-}
+pub struct UserRepo {}
 
 #[derive(Clone)]
 pub struct Repo {

@@ -22,16 +22,6 @@ pub fn init_routes() -> Router<Repo> {
         .nest("/osu_old", osu::init_routes())
 }
 
-pub fn handle_result_from_repo<T>(input: RepoResult<T>) -> Result<T, ApiError>
-where
-    T: Serialize,
-{
-    match input {
-        Ok(value) => Ok(value),
-        Err(e) => Err(ApiError::Database(e)),
-    }
-}
-
 // Custom error
 
 #[derive(Serialize, Deserialize)]

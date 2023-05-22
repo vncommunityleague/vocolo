@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::osu::BeatmapMod;
 use crate::models::tournaments::{MappoolInfo, MatchInfo, TournamentInfo, TournamentTeamInfo};
 use crate::repository::model::ModelExt;
-use crate::repository::{RepoError, RepoResult, to_object_id};
+use crate::repository::{to_object_id, RepoError, RepoResult};
 
 pub enum TeamFormat {}
 
@@ -114,12 +114,16 @@ impl ModelExt for OsuTournament {
     type T = OsuTournament;
 
     async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
-        Self::find_one(col, doc! {
+        Self::find_one(
+            col,
+            doc! {
                 "$or": [
                     { "_id": id },
                     { "slug": id.to_hex() },
                 ]
-            }, None
-        ).await
+            },
+            None,
+        )
+        .await
     }
 }

@@ -6,9 +6,9 @@ use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::OsuTournament;
-use crate::repository::{Repo, to_object_id};
 use crate::repository::model::ModelExt;
-use crate::routes::{ApiResponse, ApiResult, ApiError, handle_result_from_repo};
+use crate::repository::{to_object_id, Repo};
+use crate::routes::{ApiError, ApiResponse, ApiResult};
 
 mod mappools;
 mod matches;
@@ -23,7 +23,7 @@ pub fn init_routes() -> Router<Repo> {
         .route(
             "/:tournament_id",
             get(tournaments_get)
-                .patch(tournaments_modify)
+                .patch(tournaments_update)
                 .delete(tournaments_delete),
         )
         .nest("/mappools", mappools::init_routes())
@@ -37,12 +37,11 @@ pub async fn tournaments_get(
     State(repo): State<Repo>,
     Path(tournament_id): Path<String>,
 ) -> ApiResult<OsuTournament> {
-    let tournament = OsuTournament::find_by_id(repo.osu.tournaments.tournaments_col, &to_object_id(&tournament_id)).await;
-
-    let tournament = match handle_result_from_repo(tournament) {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+    let tournament = OsuTournament::find_by_id(
+        repo.osu.tournaments.tournaments_col,
+        &to_object_id(&tournament_id),
+    ).await
+        .map_err(ApiError::Database)?;
 
     let tournament = match tournament {
         Some(value) => value,
@@ -51,18 +50,12 @@ pub async fn tournaments_get(
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
-        .body(tournament)
-    )
+        .body(tournament))
 }
 
 // TODO: Add SearchConfig
 pub async fn tournaments_list(State(repo): State<Repo>) -> ApiResult<Vec<OsuTournament>> {
-    let tournaments = repo.osu.tournaments.list_tournaments().await;
-
-    let tournaments = match convert_result(tournaments, "tournaments") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+    let tournaments = OsuTournament::list(repo.osu.tournaments.tournaments_col).await.map_err(ApiError::Database)?;
 
     if tournaments.is_empty() {
         return Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT));
@@ -100,43 +93,28 @@ pub async fn tournaments_create(
     //     .body(tournament))
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct TournamentEditRequest {
+#[derive(Serialize, Deserialize)]
+pub struct TournamentUpdateRequest {
     pub title: Option<String>,
     pub slug: Option<String>,
 }
 
-pub async fn tournaments_modify(
+pub async fn tournaments_update(
     State(repo): State<Repo>,
     Path(tournament_id): Path<String>,
-    Json(data): Json<TournamentEditRequest>,
+    Json(data): Json<TournamentUpdateRequest>,
 ) -> ApiResult<OsuTournament> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .find_tournament_by_id_or_slug(&tournament_id)
-        .await;
+    let tournament = OsuTournament::find_one_and_update(
+        repo.osu.tournaments.tournaments_col,
+        doc! {"_id": to_object_id(&tournament_id)},
+        doc! {"$set": bson::to_document(&data).unwrap()},
+    )
+    .await.map_err(ApiError::Database)?;
 
-    let mut tournament = match convert_result(tournament, "tournament") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
+    let tournament = match tournament {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("tournament".to_string())),
     };
-
-    if let Some(t) = &data.title {
-        tournament.info.title = t.to_string();
-    }
-
-    if let Some(s) = &data.slug {
-        tournament.info.slug = s.to_string();
-    }
-
-    let tournament = repo
-        .osu
-        .tournaments
-        .replace_tournament(&tournament_id, tournament)
-        .await
-        .unwrap()
-        .unwrap();
 
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
@@ -147,16 +125,11 @@ pub async fn tournaments_delete(
     State(repo): State<Repo>,
     Path(tournament_id): Path<String>,
 ) -> ApiResult<()> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .delete_match_by_id(&tournament_id)
-        .await;
-
-    let tournament = match convert_result(tournament, "tournament") {
-        Ok(value) => value,
-        Err(e) => return Err(e),
-    };
+    let tournament = OsuTournament::delete_one(
+        repo.osu.tournaments.tournaments_col,
+        doc! {"_id": to_object_id(&tournament_id)},
+    )
+    .await.map_err(ApiError::Database)?;
 
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }

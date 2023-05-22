@@ -23,10 +23,11 @@ pub trait ModelExt {
         Ok(model)
     }
 
-    async fn find_by_id(
-        col: Collection<Self::T>,
-        id: &ObjectId,
-    ) -> RepoResult<Option<Self::T>> {
+    async fn list(col: Collection<Self::T>) -> RepoResult<Vec<Self::T>> {
+        Self::find(col, doc! {}, None).await
+    }
+    
+    async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
         Self::find_one(col, doc! { "_id": id }, None).await
     }
 
