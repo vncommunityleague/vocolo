@@ -25,7 +25,7 @@ pub fn init_routes() -> Router<Repo> {
 }
 
 /// This model is used only for REST APIs response
-/// It contains all the information about an osu!match and limit some.
+/// It contains all the information about an osu_old!match and limit some.
 /// However, DO NOT USE THIS MODEL FOR ANYTHING ELSE, ESPECIALLY NOT FOR DATABASE
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PublicOsuMatch {

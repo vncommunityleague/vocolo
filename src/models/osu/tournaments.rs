@@ -1,35 +1,39 @@
+use async_trait::async_trait;
+use bson::doc;
 use mongodb::bson::oid::ObjectId;
+use mongodb::Collection;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::BeatmapMod;
 use crate::models::tournaments::{MappoolInfo, MatchInfo, TournamentInfo, TournamentTeamInfo};
-use crate::repository::to_object_id;
+use crate::repository::model::ModelExt;
+use crate::repository::{RepoError, RepoResult, to_object_id};
 
 pub enum TeamFormat {}
 
-/// An osu!team is represented here
+/// An osu_old!team is represented here
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuTeam {
     pub info: TournamentTeamInfo,
 }
 
-/// An osu!map is represented here
+/// An osu_old!map is represented here
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMap {
-    /// The osu!map's id
+    /// The osu_old!map's id
     pub osu_beatmap_id: i64,
     /// The modifier of the map
     pub modifier: Vec<BeatmapMod>,
 }
 
-/// An osu!mappool is represented here
+/// An osu_old!mappool is represented here
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OsuMappool {
     pub info: MappoolInfo,
 
-    /// The osu!mappool's name
+    /// The osu_old!mappool's name
     pub name: String,
-    /// The osu!mappool's maps
+    /// The osu_old!mappool's maps
     pub maps: Vec<OsuMap>,
 }
 
@@ -102,5 +106,20 @@ impl OsuTournament {
         }
 
         None
+    }
+}
+
+#[async_trait]
+impl ModelExt for OsuTournament {
+    type T = OsuTournament;
+
+    async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
+        Self::find_one(col, doc! {
+                "$or": [
+                    { "_id": id },
+                    { "slug": id.to_hex() },
+                ]
+            }, None
+        ).await
     }
 }

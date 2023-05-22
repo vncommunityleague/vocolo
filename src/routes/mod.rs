@@ -19,18 +19,15 @@ pub fn init_routes() -> Router<Repo> {
         .nest("/authorize", auth::init_routes())
         .nest("/users", users::init_routes())
         // Specific game routes
-        .nest("/osu", osu::init_routes())
+        .nest("/osu_old", osu::init_routes())
 }
 
-pub fn convert_result<T>(input: RepoResult<T>, model_type: &str) -> Result<T, ApiError>
+pub fn handle_result_from_repo<T>(input: RepoResult<T>) -> Result<T, ApiError>
 where
     T: Serialize,
 {
     match input {
-        Ok(value) => match value {
-            Some(value) => Ok(value),
-            None => Err(ApiError::NotFound(model_type.to_string())),
-        },
+        Ok(value) => Ok(value),
         Err(e) => Err(ApiError::Database(e)),
     }
 }

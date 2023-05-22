@@ -19,8 +19,8 @@ pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("/discord", get(discord_login))
         .route("/discord/callback", get(discord_login_callback))
-        .route("/osu", get(osu_login))
-        .route("/osu/callback", get(osu_login_callback))
+        .route("/osu_old", get(osu_login))
+        .route("/osu_old/callback", get(osu_login_callback))
 }
 
 #[derive(Serialize, Deserialize)]

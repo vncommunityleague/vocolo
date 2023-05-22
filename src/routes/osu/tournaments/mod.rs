@@ -6,8 +6,9 @@ use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
 use crate::models::osu::tournaments::OsuTournament;
-use crate::repository::Repo;
-use crate::routes::{convert_result, ApiResponse, ApiResult};
+use crate::repository::{Repo, to_object_id};
+use crate::repository::model::ModelExt;
+use crate::routes::{ApiResponse, ApiResult, ApiError, handle_result_from_repo};
 
 mod mappools;
 mod matches;
@@ -36,20 +37,22 @@ pub async fn tournaments_get(
     State(repo): State<Repo>,
     Path(tournament_id): Path<String>,
 ) -> ApiResult<OsuTournament> {
-    let tournament = repo
-        .osu
-        .tournaments
-        .find_tournament_by_id_or_slug(&tournament_id)
-        .await;
+    let tournament = OsuTournament::find_by_id(repo.osu.tournaments.tournaments_col, &to_object_id(&tournament_id)).await;
 
-    let tournament = match convert_result(tournament, "tournament") {
+    let tournament = match handle_result_from_repo(tournament) {
         Ok(value) => value,
         Err(e) => return Err(e),
     };
 
+    let tournament = match tournament {
+        Some(value) => value,
+        None => return Err(ApiError::NotFound("tournament".to_string())),
+    };
+
     Ok(ApiResponse::new()
         .status_code(StatusCode::OK)
-        .body(tournament))
+        .body(tournament)
+    )
 }
 
 // TODO: Add SearchConfig
@@ -82,7 +85,7 @@ pub async fn tournaments_create(
 ) -> ApiResult<OsuTournament> {
     todo!()
     // let tournament = repo
-    //     .osu
+    //     .osu_old
     //     .tournaments
     //     .create_tournament(data.slug.clone(), data.title.clone())
     //     .await;

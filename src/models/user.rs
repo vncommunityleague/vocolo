@@ -1,4 +1,10 @@
 use crate::models::ModelAttribute;
+use crate::repository::model::ModelExt;
+use crate::repository::RepoResult;
+use async_trait::async_trait;
+use bson::doc;
+use bson::oid::ObjectId;
+use mongodb::Collection;
 use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Serialize, Deserialize, Clone, Copy, Debug)]
@@ -42,6 +48,25 @@ pub struct User {
     pub osu_id: String,
 
     pub roles: Vec<Role>,
+}
+
+
+#[async_trait]
+impl ModelExt for User {
+    type T = User;
+
+    async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
+        let hex_id = id.to_hex();
+
+        Self::find_one(col, doc! {
+                "$or": [
+                    { "_id": id },
+                    { "discord_id": hex_id },
+                    { "osu_id": hex_id },
+                ]
+            }, None
+        ).await
+    }
 }
 
 impl User {

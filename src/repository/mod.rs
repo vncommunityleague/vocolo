@@ -5,18 +5,26 @@ use thiserror::Error;
 
 use crate::util::constants::EnvironmentVariable;
 
+pub mod model;
 pub mod osu;
 pub mod user;
 
-pub type RepoResult<T> = Result<Option<T>, RepoError>;
+pub type RepoResult<T> = Result<T, RepoError>;
 
 #[derive(Error, Debug)]
 pub enum RepoError {
     #[error("{0} is already existed.")]
     Duplicate(String),
 
+    #[error("{0}")]
+    SerializeResponse(#[from] bson::de::Error),
+
     #[error("Error while interacting with the database: {0}")]
     Internal(#[from] mongodb::error::Error),
+}
+
+pub struct UserRepo {
+    
 }
 
 #[derive(Clone)]

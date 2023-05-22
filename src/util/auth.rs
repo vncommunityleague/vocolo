@@ -37,7 +37,7 @@ lazy_static! {
         "https://osu.ppy.sh/oauth/authorize",
         "https://osu.ppy.sh/oauth/token",
         format!(
-            "{}/authorize/osu/callback",
+            "{}/authorize/osu_old/callback",
             EnvironmentVariable::ServerPublicUrl.value()
         )
     );
@@ -68,7 +68,7 @@ impl AuthType {
     pub fn repo_path(&self) -> String {
         match self {
             AuthType::Discord => "link.discord",
-            AuthType::Osu => "link.osu",
+            AuthType::Osu => "link.osu_old",
         }
         .to_string()
     }
