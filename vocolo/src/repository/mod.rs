@@ -13,9 +13,6 @@ pub type RepoResult<T> = Result<T, RepoError>;
 
 #[derive(Error, Debug)]
 pub enum RepoError {
-    #[error("{0} is already existed.")]
-    Duplicate(String),
-
     #[error("{0}")]
     SerializeResponse(#[from] bson::de::Error),
 

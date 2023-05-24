@@ -85,13 +85,7 @@ pub trait ModelExt {
             .await
             .map_err(RepoError::Internal)?;
 
-        let items = col
-            .find(filter, options)
-            .await
-            .map_err(RepoError::Internal)?
-            .try_collect::<Vec<Self::T>>()
-            .await
-            .map_err(RepoError::Internal)?;
+        let items= Self::find(col, filter, options).await?;
 
         Ok((items, count))
     }
@@ -145,6 +139,16 @@ pub trait ModelExt {
         O: Into<Option<UpdateOptions>> + Send,
     {
         col.update_many(filter, update, options)
+            .await
+            .map_err(RepoError::Internal)
+    }
+
+    async fn find_one_and_replace(
+        col: Collection<Self::T>,
+        filter: Document,
+        replacement: Self::T,
+    ) -> RepoResult<Option<Self::T>> {
+        col.find_one_and_replace(filter, replacement, None)
             .await
             .map_err(RepoError::Internal)
     }
