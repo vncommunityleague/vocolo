@@ -29,6 +29,7 @@ pub struct OsuMap {
 /// An osu_old!mappool is represented here
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuMappool {
+    #[serde(flatten)]
     pub info: MappoolInfo,
 
     /// The osu_old!mappool's name
@@ -64,6 +65,7 @@ pub struct OsuMatchMap {}
 // Tournament
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct OsuMatch {
+    #[serde(flatten)]
     pub info: MatchInfo,
 
     #[serde(skip_serializing_if = "Option::is_none")]

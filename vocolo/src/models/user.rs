@@ -55,7 +55,7 @@ impl ModelExt for User {
     type T = User;
 
     async fn find_by_id(col: Collection<Self::T>, id: &ObjectId) -> RepoResult<Option<Self::T>> {
-        let hex_id = id.to_hex();
+        let hex_id = &id.to_hex();
 
         Self::find_one(
             col,

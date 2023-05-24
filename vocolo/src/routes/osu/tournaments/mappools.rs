@@ -6,6 +6,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
+use axum::routing::{delete, post};
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +24,14 @@ pub fn init_routes() -> Router<Repo> {
             get(mappools_get)
                 .patch(mappools_update)
                 .delete(mappools_delete),
+        )
+        .route(
+            "/:mappool_id/maps",
+            post(mappools_add_map),
+        )
+        .route(
+            "/:mappool_id/maps/:map_id",
+            delete(mappools_remove_map),
         )
 }
 
@@ -132,8 +141,8 @@ pub async fn mappools_delete(
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AddMapRequest {
-    pub map_id: String,
-    pub modifier: String,
+    pub map_id: i64,
+    pub modifier: Vec<String>,
 }
 
 pub async fn mappools_add_map(
@@ -147,8 +156,8 @@ pub async fn mappools_add_map(
         doc! {
             "$push": {
                 "maps": bson::to_document(&OsuMap {
-                    osu_beatmap_id: data.map_id.parse::<i64>().unwrap(),
-                    modifier: vec![BeatmapMod::from_str(&data.modifier).unwrap()],
+                    osu_beatmap_id: data.map_id,
+                    modifier: data.modifier.into_iter().map(|x| BeatmapMod::from_str(&x).unwrap()).collect::<Vec<BeatmapMod>>(),
                 }).unwrap()
             }
         },
@@ -159,7 +168,7 @@ pub async fn mappools_add_map(
     Ok(ApiResponse::new().status_code(StatusCode::NO_CONTENT))
 }
 
-pub async fn maps_remove_map(
+pub async fn mappools_remove_map(
     State(repo): State<Repo>,
     Path((mappool_id, map_id)): Path<(String, String)>,
 ) -> ApiResult<()> {

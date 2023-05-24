@@ -29,7 +29,6 @@ pub trait ModelExt {
         let _ = col
             .insert_one(&model, None)
             .await
-            .map(|_| model)
             .map_err(RepoError::Internal)?;
 
         Ok(model)
@@ -85,7 +84,7 @@ pub trait ModelExt {
             .await
             .map_err(RepoError::Internal)?;
 
-        let items= Self::find(col, filter, options).await?;
+        let items = Self::find(col, filter, options).await?;
 
         Ok((items, count))
     }

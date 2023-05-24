@@ -68,7 +68,7 @@ impl AuthType {
     pub fn repo_path(&self) -> String {
         match self {
             AuthType::Discord => "link.discord",
-            AuthType::Osu => "link.osu_old",
+            AuthType::Osu => "link.osu",
         }
         .to_string()
     }

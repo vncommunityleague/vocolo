@@ -19,7 +19,7 @@ pub fn init_routes() -> Router<Repo> {
         .nest("/authorize", auth::init_routes())
         .nest("/users", users::init_routes())
         // Specific game routes
-        .nest("/osu_old", osu::init_routes())
+        .nest("/osu", osu::init_routes())
 }
 
 // Custom error
@@ -38,6 +38,9 @@ pub enum ApiError {
     #[error("Not Found: {0}")]
     NotFound(String),
 
+    #[error("Invalid Input: {0}")]
+    InvalidInput(String),
+
     #[error("Internal Server Error")]
     InternalServerError,
 }
@@ -47,8 +50,8 @@ impl IntoResponse for ApiError {
         let message = self.to_string();
         let (status_code, error_message) = match self {
             // 4xx errors
-            ApiError::Database(RepoError::Duplicate(..)) => (StatusCode::BAD_REQUEST, "duplicate"),
             ApiError::NotFound(..) => (StatusCode::NOT_FOUND, "not_found"),
+            ApiError::InvalidInput(..) => (StatusCode::BAD_REQUEST, "invalid_input"),
 
             // 5xx errors
             ApiError::Database(..) => {

@@ -1,3 +1,4 @@
+use crate::models::user::User;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Redirect;
@@ -6,11 +7,13 @@ use axum::{
     routing::{delete, get, post, put},
     Json, Router,
 };
+use bson::doc;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 
-use crate::repository::Repo;
+use crate::repository::model::ModelExt;
+use crate::repository::{to_object_id, Repo};
 use crate::routes::{ApiError, ApiResponse, ApiResult};
 use crate::util::auth;
 use crate::util::auth::AuthType;
@@ -19,8 +22,8 @@ pub fn init_routes() -> Router<Repo> {
     Router::new()
         .route("/discord", get(discord_login))
         .route("/discord/callback", get(discord_login_callback))
-        .route("/osu_old", get(osu_login))
-        .route("/osu_old/callback", get(osu_login_callback))
+        .route("/osu", get(osu_login))
+        .route("/osu/callback", get(osu_login_callback))
 }
 
 #[derive(Serialize, Deserialize)]
@@ -36,7 +39,7 @@ pub async fn discord_login() -> Redirect {
         .add_scope(Scope::new("identify".to_string()))
         .url();
 
-    Redirect::to(&*url.to_string())
+    Redirect::to(url.as_ref())
 }
 
 pub async fn discord_login_callback(
@@ -53,10 +56,14 @@ pub async fn discord_login_callback(
         .await
         .unwrap();
 
-    if repo.user.find_user_by_discord_id(&user.id).await.is_none() {
-        repo.user.create(&user.id, &AuthType::Discord).await;
-        return Ok(ApiResponse::new().status_code(StatusCode::CREATED));
+    if User::exists(repo.user.user_col, doc! { "discord_id": &user.id }).await? {
+        return Ok(ApiResponse::new().status_code(StatusCode::OK));
     }
+
+    // if repo.user.find_user_by_discord_id(&user.id).await.is_none() {
+    //     repo.user.create(&user.id, &AuthType::Discord).await;
+    //     return Ok(ApiResponse::new().status_code(StatusCode::CREATED));
+    // }
 
     Err(ApiError::InternalServerError)
 }
@@ -69,7 +76,7 @@ pub async fn osu_login() -> Redirect {
         .add_scope(Scope::new("public".to_string()))
         .url();
 
-    Redirect::to(&*url.to_string())
+    Redirect::to(url.as_ref())
 }
 
 pub async fn osu_login_callback(
@@ -86,17 +93,17 @@ pub async fn osu_login_callback(
         .await
         .unwrap();
 
-    if repo
-        .user
-        .find_user_by_osu_id(&user.id.to_string())
-        .await
-        .is_none()
-    {
-        repo.user
-            .create(&*user.id.to_string().clone(), &AuthType::Osu)
-            .await;
-        return Ok(ApiResponse::new().status_code(StatusCode::CREATED));
-    }
+    // if repo
+    //     .user
+    //     .find_user_by_osu_id(&user.id.to_string())
+    //     .await
+    //     .is_none()
+    // {
+    //     repo.user
+    //         .create(&*user.id.to_string().clone(), &AuthType::Osu)
+    //         .await;
+    //     return Ok(ApiResponse::new().status_code(StatusCode::CREATED));
+    // }
 
     Err(ApiError::InternalServerError)
 }
