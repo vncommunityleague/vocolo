@@ -18,6 +18,12 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
+                    .col(
+                        ColumnDef::new(User::AuthId)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -144,6 +150,7 @@ impl MigrationTrait for Migration {
 enum User {
     Table,
     Id,
+    AuthId
 }
 
 #[derive(DeriveIden)]

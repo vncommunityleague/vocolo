@@ -21,10 +21,10 @@ pub fn routes() -> Router<AppState> {
 }
 
 pub async fn tournament_create(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     WithValidation(data): WithValidation<Json<OsuTournamentCreation>>,
 ) -> Result<APIResponse<OsuTournament>> {
-    let tournament = OsuTournamentHandler::create(&db, data.into_inner()).await?;
+    let tournament = OsuTournamentHandler::create(&state.database, data.into_inner()).await?;
 
     Ok(APIResponse::default()
         .status_code(StatusCode::CREATED)
@@ -32,13 +32,13 @@ pub async fn tournament_create(
 }
 
 pub async fn tournament_get(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<APIResponse<OsuTournament>> {
     let tournament = if let Ok(id) = id.parse::<i32>() {
-        OsuTournamentHandler::get_by_id(&db, id).await?
+        OsuTournamentHandler::get_by_id(&state.database, id).await?
     } else {
-        OsuTournamentHandler::get_by_slug(&db, &id).await?
+        OsuTournamentHandler::get_by_slug(&state.database, &id).await?
     };
 
     Ok(APIResponse::default().body(tournament))

@@ -22,6 +22,7 @@ tracing-subscriber.workspace = true
 
 axum.workspace = true
 axum_garde.workspace = true
+tower-http.workspace = true
 
 sea-orm.workspace = true
 
