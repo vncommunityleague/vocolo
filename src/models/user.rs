@@ -11,9 +11,9 @@ pub struct APIUser {
 
 impl From<Model> for APIUser {
     fn from(user: Model) -> Self {
-        Self { 
-            id: user.id, 
-            identity_id: user.identity_id 
+        Self {
+            id: user.id,
+            identity_id: user.identity_id,
         }
     }
 }

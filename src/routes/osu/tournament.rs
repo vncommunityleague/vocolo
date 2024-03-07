@@ -16,7 +16,9 @@ use vocolo_entity::prelude::OsuTournament;
 
 use crate::error::Error;
 use crate::models::osu::APIOsuTournament;
+use crate::models::user::APIUser;
 use crate::routes::AppState;
+use crate::util::auth::SessionUser;
 
 const MIN_SLUG_LENGTH: usize = 2;
 const MAX_SLUG_LENGTH: usize = 8;
@@ -47,10 +49,11 @@ pub struct OsuTournamentCreation {
 
 pub async fn tournament_create(
     State(state): State<AppState>,
+    SessionUser(user): SessionUser,
     WithValidation(data): WithValidation<Json<OsuTournamentCreation>>,
 ) -> Result<Json<APIOsuTournament>, Error> {
     let data = data.into_inner();
-
+    
     let tournament = ActiveModel {
         slug: Set(data.slug),
         name: Set(data.name),

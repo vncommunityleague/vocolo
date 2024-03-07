@@ -2,9 +2,9 @@ use axum::extract::State;
 use axum::routing::post;
 use axum::{Json, Router};
 use axum_garde::WithValidation;
+use sea_orm::prelude::Uuid;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
-use sea_orm::prelude::Uuid;
 use serde::{Deserialize, Serialize};
 use tower_http::validate_request::ValidateRequestHeaderLayer;
 
@@ -34,8 +34,9 @@ pub async fn create_new_user(
 ) -> Result<Json<APIUser>, Error> {
     let data = data.into_inner();
 
-    let identity_id = Uuid::parse_str(&data.id).map_err(|_| Error::Custom("Invalid UUID".to_string()))?;
-    
+    let identity_id =
+        Uuid::parse_str(&data.id).map_err(|_| Error::Custom("Invalid UUID".to_string()))?;
+
     let user = ActiveModel {
         identity_id: Set(identity_id),
         ..Default::default()
