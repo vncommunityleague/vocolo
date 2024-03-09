@@ -2,7 +2,9 @@
 
 pub mod prelude;
 
+pub mod identities;
 pub mod osu_mappool;
 pub mod osu_team;
 pub mod osu_tournament;
+pub mod sessions;
 pub mod user;

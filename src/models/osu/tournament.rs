@@ -9,6 +9,8 @@ pub struct APIOsuTournament {
     pub slug: String,
     pub name: String,
 
+    pub team_size: i32,
+
     pub start_date: DateTime,
     pub end_date: DateTime,
 
@@ -22,6 +24,7 @@ impl From<Model> for APIOsuTournament {
             id: tournament.id,
             slug: tournament.slug,
             name: tournament.name,
+            team_size: tournament.team_size,
             start_date: tournament.start_date,
             end_date: tournament.end_date,
             registration_start_date: tournament.registration_start_date,

@@ -15,11 +15,6 @@ sea-orm = { version = "1.0.0-rc.1", features = ["sqlx-postgres", "runtime-tokio-
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-garde = { version = "0.18", features = ["derive"] }
-
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-thiserror = "1.0"
 
 [package]
 name = "vocolo"
@@ -44,10 +39,10 @@ http = "1.1"
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
-garde.workspace = true
+garde = { version = "0.18", features = ["derive"] }
 
-thiserror.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1.0"
 
 sea-orm.workspace = true

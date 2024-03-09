@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use vocolo_entity::user::Model;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct APIUser {
     pub id: i32,
     pub identity_id: Uuid,

@@ -1,10 +1,10 @@
+use axum::{Json, Router};
 use axum::extract::State;
 use axum::routing::post;
-use axum::{Json, Router};
 use axum_garde::WithValidation;
-use sea_orm::prelude::Uuid;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
+use sea_orm::prelude::Uuid;
 use serde::{Deserialize, Serialize};
 use tower_http::validate_request::ValidateRequestHeaderLayer;
 
@@ -13,11 +13,12 @@ use vocolo_entity::user::{ActiveModel, Model};
 use crate::error::Error;
 use crate::models::user::APIUser;
 use crate::routes::AppState;
+use crate::util;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/_create_new_user", post(create_new_user))
-        .route_layer(ValidateRequestHeaderLayer::bearer("Bearer"))
+        .route_layer(ValidateRequestHeaderLayer::bearer(util::env::var("INTERNAL_TOKEN").as_str()))
 }
 
 #[derive(garde::Validate, Serialize, Deserialize)]

@@ -1,8 +1,9 @@
+pub use team::*;
 pub use tournament::*;
 
-mod game_match;
-
 mod tournament;
+
+mod game_match;
 
 mod team;
 

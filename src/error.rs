@@ -5,7 +5,7 @@ use axum::Json;
 pub enum Error {
     #[error("{0}")]
     Unauthorized(String),
-    
+
     #[error("Database error: {0}")]
     Database(#[from] sea_orm::error::DbErr),
 

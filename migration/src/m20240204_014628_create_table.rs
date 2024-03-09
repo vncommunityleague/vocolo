@@ -47,6 +47,7 @@ impl MigrationTrait for Migration {
                             .unique_key(),
                     )
                     .col(ColumnDef::new(OsuTournament::Name).string().not_null())
+                    .col(ColumnDef::new(OsuTournament::TeamSize).integer().not_null())
                     .col(
                         ColumnDef::new(OsuTournament::StartDate)
                             .timestamp()
@@ -110,7 +111,7 @@ impl MigrationTrait for Migration {
                             .name("fk_osu_team_captain")
                             .from_tbl(OsuTeam::Table)
                             .to_tbl(User::Table)
-                            .from_col(OsuTeam::Id)
+                            .from_col(OsuTeam::Captain)
                             .to_col(User::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
@@ -159,6 +160,7 @@ enum OsuTournament {
     Id,
     Slug,
     Name,
+    TeamSize,
     StartDate,
     EndDate,
     RegistrationStartDate,
@@ -170,6 +172,7 @@ enum OsuTeam {
     Table,
     Id,
     Name,
+    CaptainId,
     Captain,
     Members,
 }

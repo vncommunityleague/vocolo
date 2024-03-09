@@ -1,9 +1,10 @@
-use std::collections::HashMap;
 use std::str::FromStr;
 
 use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::prelude::Uuid;
+use serde::Deserialize;
 
 use vocolo_entity::prelude::User;
 use vocolo_entity::user::Column;
@@ -15,11 +16,24 @@ use crate::util;
 
 pub struct SessionUser(pub APIUser);
 
+#[derive(Deserialize, Debug)]
+struct Session {
+    id: Uuid,
+    identity: Identity,
+
+    active: bool,
+}
+
+#[derive(Deserialize, Debug)]
+struct Identity {
+    id: Uuid,
+}
+
 #[axum::async_trait]
 impl<S> FromRequestParts<S> for SessionUser
-where
-    AppState: FromRef<S>,
-    S: Send + Sync
+    where
+        AppState: FromRef<S>,
+        S: Send + Sync
 {
     type Rejection = Error;
 
@@ -31,23 +45,28 @@ where
         let mut headers = reqwest::header::HeaderMap::new();
         for (name, value) in parts.headers.iter() {
             let name = reqwest::header::HeaderName::from_str(name.as_str()).unwrap();
+
+            if name.eq("Content-Length") {
+                continue;
+            }
+
             headers.insert(name, value.as_bytes().try_into().unwrap());
         }
-        
-        let resp = reqwest::Client::new()
+
+        let sess = reqwest::Client::new()
             .get(&auth_url)
             .headers(headers)
             .send()
             .await
             .map_err(|err| Error::Unauthorized(err.to_string()))?
-            .json::<HashMap<String, String>>()
+            .error_for_status()
+            .map_err(|err| Error::Unauthorized(err.to_string()))?
+            .json::<Session>()
             .await
             .map_err(|err| Error::Unauthorized(err.to_string()))?;
 
-        let id = resp.get("id").ok_or(Error::Unauthorized("No identity".to_string()))?;
-
         let user = User::find()
-            .filter(Column::IdentityId.eq(id))
+            .filter(Column::IdentityId.eq(sess.identity.id))
             .one(&state.database)
             .await?
             .ok_or(Error::NotFound("user".to_string()))?;

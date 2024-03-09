@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
+use axum::{Json, Router};
 use axum::extract::FromRef;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use axum::{Json, Router};
 use sea_orm::DatabaseConnection;
 
 mod internal;

@@ -1,14 +1,14 @@
+use axum::{Json, Router};
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post};
-use axum::{Json, Router};
 use axum_garde::WithValidation;
 use chrono::Utc;
-use sea_orm::prelude::DateTime;
-use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter,
 };
+use sea_orm::ActiveValue::Set;
+use sea_orm::prelude::DateTime;
 use serde::{Deserialize, Serialize};
 
 use vocolo_entity::osu_tournament::{ActiveModel, Column, Model};
@@ -16,7 +16,6 @@ use vocolo_entity::prelude::OsuTournament;
 
 use crate::error::Error;
 use crate::models::osu::APIOsuTournament;
-use crate::models::user::APIUser;
 use crate::routes::AppState;
 use crate::util::auth::SessionUser;
 
@@ -34,7 +33,7 @@ pub fn routes() -> Router<AppState> {
     )
 }
 
-#[derive(garde::Validate, Serialize, Deserialize)]
+#[derive(garde::Validate, Serialize, Deserialize, Debug)]
 #[garde(allow_unvalidated)]
 pub struct OsuTournamentCreation {
     #[garde(length(min = MIN_SLUG_LENGTH, max = MAX_SLUG_LENGTH))]
@@ -49,11 +48,10 @@ pub struct OsuTournamentCreation {
 
 pub async fn tournament_create(
     State(state): State<AppState>,
-    SessionUser(user): SessionUser,
     WithValidation(data): WithValidation<Json<OsuTournamentCreation>>,
 ) -> Result<Json<APIOsuTournament>, Error> {
     let data = data.into_inner();
-    
+
     let tournament = ActiveModel {
         slug: Set(data.slug),
         name: Set(data.name),
@@ -80,10 +78,10 @@ pub async fn tournament_get(
     } else {
         OsuTournament::find().filter(Column::Slug.eq(id))
     }
-    .one(&state.database)
-    .await
-    .map_err(Error::Database)?
-    .ok_or(Error::NotFound("osu_tournament".to_owned()))?;
+        .one(&state.database)
+        .await
+        .map_err(Error::Database)?
+        .ok_or(Error::NotFound("osu_tournament".to_owned()))?;
 
     Ok(Json(APIOsuTournament::from(tournament)))
 }
@@ -101,15 +99,16 @@ pub struct OsuTournamentUpdate {
     pub registration_end_date: Option<DateTime>,
 }
 
+#[axum::debug_handler]
 pub async fn tournament_edit(
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(id): Path<i32>,
     WithValidation(data): WithValidation<Json<OsuTournamentUpdate>>,
 ) -> Result<Json<APIOsuTournament>, Error> {
     let data = data.into_inner();
 
     let tournament = OsuTournament::find_by_id(id)
-        .one(&db)
+        .one(&state.database)
         .await
         .map_err(Error::Database)?
         .ok_or(Error::NotFound("osu_tournament".to_owned()))?;
@@ -118,6 +117,7 @@ pub async fn tournament_edit(
         id: Set(tournament.id),
         slug: Set(data.slug.unwrap_or(tournament.slug)),
         name: Set(data.name.unwrap_or(tournament.name)),
+        team_size: Set(tournament.team_size),
         start_date: Set(data.start_date.unwrap_or(tournament.start_date)),
         end_date: Set(data.end_date.unwrap_or(tournament.end_date)),
         registration_start_date: Set(data
@@ -127,14 +127,16 @@ pub async fn tournament_edit(
             .registration_end_date
             .unwrap_or(tournament.registration_end_date)),
     }
-    .update(&db)
-    .await
-    .map_err(Error::Database)?;
+        .update(&state.database)
+        .await
+        .map_err(Error::Database)?;
 
     Ok(Json(APIOsuTournament::from(tournament)))
 }
 
+
 pub async fn tournament_delete(
+    SessionUser(user): SessionUser,
     State(db): State<DatabaseConnection>,
     Path(id): Path<i32>,
 ) -> Result<StatusCode, Error> {

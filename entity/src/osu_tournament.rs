@@ -11,6 +11,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub slug: String,
     pub name: String,
+    pub team_size: i32,
     pub start_date: DateTime,
     pub end_date: DateTime,
     pub registration_start_date: DateTime,
