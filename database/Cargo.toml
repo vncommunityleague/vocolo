@@ -1,0 +1,25 @@
+[package]
+name = "vocolo-database"
+version = "0.1.0"
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+vocolo-models = { path = "../models" }
+vocolo-internal = { path = "../internal" }
+
+tokio.workspace = true
+futures.workspace = true
+
+serde.workspace = true
+chrono.workspace = true
+revolt_optional_struct = { version = "0.2.0" }
+
+mongodb = "2.8.0"
+bson.workspace = true
+sqlx = { version = "0.7", features = [ "runtime-tokio", "tls-rustls", "postgres" ] }
+
+thiserror.workspace = true
+tracing.workspace = true
